@@ -24,3 +24,21 @@ class Rental(BaseModel, Base):
     # Relationships
     user = relationship("User", back_populates="rentals")
     telegram_user = relationship("TelegramUser")
+
+    async def modify_plan_duration(self, duration_change_seconds, action="reduced"):
+        expiry_time = self.end_time
+        new_expiry_time = expiry_time + duration_change_seconds
+
+        if new_expiry_time < int(time.time()) and action == "reduced":
+            return
+        self.end_time = new_expiry_time
+
+    async def extend_plan(self, additional_seconds):
+        await self.modify_plan_duration(additional_seconds, action="extended")
+        self.sent_expiry_notification = 0
+        self.is_expired = 0
+        self.save()
+
+    async def reduce_plan(self, reduced_duration_seconds):
+        await self.modify_plan_duration(-reduced_duration_seconds, action="reduced")
+        self.save()
