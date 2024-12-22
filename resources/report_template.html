@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Payments Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(odd) {
+            background-color: #e6f7ff;
+        }
+        tr:hover {
+            background-color: #ddd;
+        }
+        .expired {
+            color: red;
+        }
+        .active {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>User Payments Report</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Username</th>
+                    <th>Creation Time (IST)</th>
+                    <th>Expiry Time (IST)</th>
+                    <th>Status</th>
+                    <th>Total Payments</th>
+                    <th>Total Earnings</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>{{ row.user_id }}</td>
+                    <td>{{ row.username }}</td>
+                    <td>{{ row.creation_ist }}</td>
+                    <td>{{ row.expiry_ist }}</td>
+                    <td class="{{ 'expired' if row.is_expired else 'active' }}">{{ 'Expired' if row.is_expired else 'Active' }}</td>
+                    <td>{{ row.payment_count }}</td>
+                    <td>{{ row.total_payment }} {{ row.currency if row.currency else '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
