@@ -1,3 +1,5 @@
+import time
+
 from models.baseModel import Base, BaseModel
 from sqlalchemy import Column, String, Text, Integer, ForeignKey, CheckConstraint, REAL
 from sqlalchemy.orm import relationship
