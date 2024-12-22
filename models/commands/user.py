@@ -232,7 +232,13 @@ class UserRoutes:
         user = storage.query_object(User, linux_username=username)
         if not user:
             await event.respond(f"❌ No user found for username:`{username}`.")
+            return
+
         telegram_id = storage.query_object(TelegramUser, user_id=user.id)
+        if not telegram_id:
+            await event.respond(f"❌ No Telegram account is linked with {username}.")
+            return
+
         storage.delete(telegram_id)
         storage.save()
 
