@@ -2,16 +2,14 @@ from models import storage
 from models.misc import Auth, Utilities
 
 
-
 class PaymentRoutes:
     # /earnings command
     @Auth.authorized_user
     async def show_earnings(self, event):
-        all_payments = storage.all('Payment')
+        all_payments = storage.all("Payment")
         total_earnings = sum(payment.amount for payment in all_payments)
         await event.respond(f"💰 **Total Earnings:** `{total_earnings:.2f} INR`")
 
-        
     @Auth.authorized_user
     async def payment_history(self, event):
 
@@ -20,11 +18,11 @@ class PaymentRoutes:
             return
 
         username = event.message.text.split()[1]
-        user = storage.query_object('User', linux_username=username)
+        user = storage.query_object("User", linux_username=username)
         if not user:
             await event.respond(f"❌ User `{username}` not found.")
             return
-        payments = storage.all('Payment', {'user_id': user.id})
+        payments = storage.all("Payment", {"user_id": user.id})
 
         if payments:
             response = f"💳 Payment History for `{username}`:\n\n"
