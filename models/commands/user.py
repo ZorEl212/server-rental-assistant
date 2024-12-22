@@ -37,7 +37,8 @@ class UserRoutes:
         amount = args[3]
         currency = args[4].upper()
 
-        if SystemUserManager.is_user_exists(username):
+        user = storage.query_object("User", linux_username=username)
+        if SystemUserManager.is_user_exists(username) or user:
             await event.respond(f"❌ User `{username}` already exists.")
             return
 
