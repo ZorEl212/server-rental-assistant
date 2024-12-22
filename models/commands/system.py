@@ -65,7 +65,6 @@ class SystemRoutes:
             }
             for user in user_info
         ]
-
         # Render the template with data
         return template.render(rows=processed_rows)
 
@@ -80,7 +79,11 @@ class SystemRoutes:
                 pdf_file_path = temp_pdf.name
 
             # Send PDF
-            await client.send_file(event.chat_id, pdf_file_path)
+            await client.send_file(
+                event.chat_id,
+                pdf_file_path,
+                caption=f"📄 Report {Utilities.get_date_str(int(datetime.now().timestamp()))}",
+            )
 
         except Exception as e:
             await event.respond(f"❌ Error generating report: {e}")
@@ -137,6 +140,7 @@ class SystemRoutes:
         if not user:
             await event.respond("❌ Invalid or expired link.")
             return
+
         username = user.linux_username
         print("Username:", username)
         rental = storage.query_object("Rental", user_id=user.id)
