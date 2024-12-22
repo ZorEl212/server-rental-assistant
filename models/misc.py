@@ -1,7 +1,12 @@
 import asyncio
 import random
+import string
+import datetime
+import pytz
 import aiohttp
 import subprocess
+from models import storage
+
 
 from resources.constants import (
     ADJECTIVES,
@@ -99,3 +104,82 @@ class Utilities:
                 return data["rates"][to_currency]
 
 
+class SystemUserManager:
+    @staticmethod
+    def create_user(username, password):
+        hashed_password = subprocess.run(
+            ["openssl", "passwd", "-6", password],
+            check=True, capture_output=True, text=True
+        ).stdout.strip()
+        subprocess.run(
+            ["sudo", "useradd", "-m", "-s", "/bin/bash", "-p", hashed_password, username],
+            check=True
+        )
+        print(f"System user {username} created successfully.")
+
+    @staticmethod
+    async def delete_system_user(username):
+        #await client.send_message(ADMIN_ID, f"🗑️ Deleting user `{username}`...")
+        subprocess.run(["sudo", "pkill", "-9", "-u", username], check=False)
+        try:
+            subprocess.run(["sudo", "userdel", "-r", username], check=True)
+        except subprocess.CalledProcessError as e:
+            return False
+        user = storage.query_object('User', linux_username=username)
+        if not user:
+            return False
+        rental = storage.query_object('Rental', user_id=user.id)
+        if rental:
+            rental.is_active = 0
+        storage.delete(user)
+        storage.save()
+        return True
+
+    @classmethod
+    async def change_password(cls, username):
+        """
+        Change the password of a system user
+        """
+        password = Utilities.generate_password()
+        hashed_password = subprocess.run(
+            ["openssl", "passwd", "-6", password],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        subprocess.run(
+            ["sudo", "usermod", "-p", hashed_password, username],
+            check=True,
+        )
+        return password
+
+    @classmethod
+    async def remove_ssh_auth_keys(cls, username) -> tuple[bool, str]:
+        """
+        Remove the SSH authorized keys for a system user
+        """
+        try:
+            subprocess.run(
+                ["sudo", "rm", f"/home/{username}/.ssh/authorized_keys"], check=True
+            )
+        except subprocess.CalledProcessError:
+            return False, f"No authorized keys found for user {username}."
+        return True, f"Authorized keys removed for user {username}."
+
+    @classmethod
+    def get_passwd_data(cls):
+        with open("/etc/passwd", "r") as f:
+            return f.readlines()
+
+    @classmethod
+    def is_user_exists(cls, username):
+        return any(line.startswith(username + ":") for line in cls.get_passwd_data())
+
+    @classmethod
+    async def get_running_users(cls):
+        connected_users = await asyncio.create_subprocess_shell(
+            "w", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+        stdout, _ = await connected_users.communicate()
+        connected_users = stdout.decode()
+        return connected_users
