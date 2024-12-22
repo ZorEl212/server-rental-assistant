@@ -1,6 +1,7 @@
-from models.baseModel import Base, BaseModel
-from sqlalchemy import Column, String, Text, Integer
+from sqlalchemy import Column, Integer, String, Text
 from sqlalchemy.orm import relationship
+
+from models.baseModel import Base, BaseModel
 
 
 class User(BaseModel, Base):

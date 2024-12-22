@@ -5,20 +5,19 @@ from datetime import datetime
 import pytz
 from telethon import Button
 
-from models import storage
-from models.misc import Utilities, SystemUserManager, Auth
+from models import client, storage
+from models.misc import Auth, SystemUserManager, Utilities
 from models.payments import Payment
 from models.rentals import Rental
 from models.telegram_users import TelegramUser
 from models.users import User
 from resources.constants import (
+    ADMIN_ID,
+    BE_NOTED_TEXT,
     SSH_HOSTNAME,
     SSH_PORT,
-    BE_NOTED_TEXT,
-    ADMIN_ID,
     TIME_ZONE,
 )
-from models import client
 
 
 class UserRoutes:

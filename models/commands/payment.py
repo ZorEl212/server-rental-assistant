@@ -1,5 +1,6 @@
 from models import storage
 from models.misc import Auth, Utilities
+from models.payments import Payment
 
 
 class PaymentRoutes:

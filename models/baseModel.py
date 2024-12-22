@@ -1,22 +1,12 @@
-from sqlalchemy import (
-    create_engine,
-    Column,
-    Integer,
-    String,
-    ForeignKey,
-    REAL,
-    Text,
-    CheckConstraint,
-    DateTime,
-)
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
-from datetime import datetime
 import uuid
+from datetime import datetime
+
+from sqlalchemy import Column, DateTime, String
+from sqlalchemy.orm import declarative_base, relationship
 
 import models
 
 time = "%Y-%m-%dT%H:%M:%S.%f"
-
 # Define the base class for ORM
 Base = declarative_base()
 

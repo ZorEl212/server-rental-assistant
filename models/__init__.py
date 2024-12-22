@@ -1,19 +1,18 @@
-from models.engine.db_engine import DBStorage
-
 from telethon import TelegramClient
-from resources.constants import API_ID, API_HASH
+
+from models.engine.db_engine import DBStorage
+from resources.constants import API_HASH, API_ID
 
 storage = DBStorage()
 storage.reload()
 
 client = TelegramClient("server_plan_bot", API_ID, API_HASH)
 
-from models.commands.user import UserRoutes
-from models.commands.rental import PlanRoutes
-from models.commands.payment import PaymentRoutes
-from models.commands.system import SystemRoutes
 from models.commands.main_bot import BotManager
-
+from models.commands.payment import PaymentRoutes
+from models.commands.rental import PlanRoutes
+from models.commands.system import SystemRoutes
+from models.commands.user import UserRoutes
 
 user_routes = UserRoutes()
 plan_routes = PlanRoutes()

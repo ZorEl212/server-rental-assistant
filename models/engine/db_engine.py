@@ -1,13 +1,12 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker, Query
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import Query, joinedload, scoped_session, sessionmaker
 from sqlalchemy.sql import or_
 
 from models.baseModel import Base
-from models.users import User
-from models.rentals import Rental
 from models.payments import Payment
+from models.rentals import Rental
 from models.telegram_users import TelegramUser
+from models.users import User
 
 classes = {
     "Rental": Rental,

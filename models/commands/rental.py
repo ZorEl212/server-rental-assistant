@@ -1,5 +1,5 @@
-from models import storage, client
-from models.misc import Utilities, Auth
+from models import client, storage
+from models.misc import Auth, Utilities
 from models.payments import Payment
 
 

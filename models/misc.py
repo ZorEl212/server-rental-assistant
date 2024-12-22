@@ -1,19 +1,14 @@
 import asyncio
+import datetime
 import random
 import string
-import datetime
-import pytz
-import aiohttp
 import subprocess
+
+import aiohttp
+import pytz
+
 from models import storage
-
-
-from resources.constants import (
-    ADJECTIVES,
-    ADMIN_ID,
-    NOUNS,
-    TIME_ZONE,
-)
+from resources.constants import ADJECTIVES, ADMIN_ID, NOUNS, TIME_ZONE
 
 
 class Auth:

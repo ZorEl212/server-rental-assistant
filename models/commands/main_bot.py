@@ -1,8 +1,9 @@
-from telethon import TelegramClient, events
 import typing
 from typing import Dict
 
-from resources.constants import API_ID, API_HASH, BOT_TOKEN
+from telethon import TelegramClient, events
+
+from resources.constants import API_HASH, API_ID, BOT_TOKEN
 
 
 class BotManager:

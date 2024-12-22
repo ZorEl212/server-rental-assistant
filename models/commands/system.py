@@ -1,19 +1,17 @@
 import asyncio
+import tempfile
 import time
 import traceback
 from datetime import datetime
 
-from telethon import Button
-
-from models import storage
-from models.misc import Auth, Utilities, SystemUserManager
 from jinja2 import Environment, FileSystemLoader
+from telethon import Button
 from weasyprint import HTML
-import tempfile
 
+from models import client, storage
+from models.misc import Auth, SystemUserManager, Utilities
 from models.telegram_users import TelegramUser
 from resources.constants import ADMIN_ID
-from models import client
 
 
 class SystemRoutes:
