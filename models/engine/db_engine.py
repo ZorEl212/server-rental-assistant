@@ -1,6 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker, Query
-
+from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import or_
+    
 from models.baseModel import Base
 from models.users import User
 from models.rentals import Rental
@@ -113,4 +115,40 @@ class DBStorage:
             query = query.filter(getattr(cls, attr) == value)
 
         return query.first()  # Return the first matching result, or None if not found
+
+
+    def join(self, base_cls, related_classes, filters=None, fetch_one=False, outer=False):
+        """
+        Generic join method for querying data with joins in SQLAlchemy.
+
+        :param fetch_one: Fetch only one result if True, otherwise fetch all results.
+        :param base_cls: The base class to query (e.g., User, Rental, etc.).
+        :param related_classes: A list of related classes to join (e.g., [User, Rental]).
+        :param filters: Optional dictionary of filters (e.g., {'column': value}).
+        :param outer: Use an outer join if True; otherwise, use inner join.
+
+        :return: The result of the query (a list of objects).
+        """
+        # Start with the base query
+        base_cls = classes[base_cls] if isinstance(base_cls, str) else base_cls
+        related_classes = [classes[cls] if isinstance(cls, str) else cls for cls in related_classes]
+        query = self.__session.query(base_cls)
+
+        # Automatically join related classes based on relationships
+        for related_cls in related_classes:
+            if outer:
+                query = query.outerjoin(related_cls)  # Use outer join
+            else:
+                query = query.join(related_cls)  # Use inner join by default
+
+        # Apply additional filters if provided
+        if filters:
+            for attr, value in filters.items():
+                query = query.filter(getattr(base_cls, attr) == value)
+
+        # Execute the query and return results
+        return query.all() if not fetch_one else query.first()
+
+
+
 
