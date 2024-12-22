@@ -1,58 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Payments Report</title>
     <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
             background-color: #f4f4f4;
         }
+
         .container {
-            width: 80%;
+            width: 100%;
             margin: 0 auto;
             padding: 20px;
             background-color: #fff;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
         h1 {
             text-align: center;
             color: #333;
         }
+
         table {
+            table-layout: fixed;
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
-        th, td {
+
+        th,
+        td {
             padding: 10px;
             border: 1px solid #ddd;
             text-align: left;
         }
+
         th {
             background-color: #4CAF50;
             color: white;
         }
+
+        td {
+            word-wrap: break-word;
+        }
+
+        th:last-child,
+        td:last-child,
+        th:nth-last-child(2),
+        td:nth-last-child(2) {
+            text-align: right;
+            /* Right-align numeric values */
+        }
+
         tr:nth-child(even) {
             background-color: #f2f2f2;
         }
+
         tr:nth-child(odd) {
             background-color: #e6f7ff;
         }
+
         tr:hover {
             background-color: #ddd;
         }
+
         .expired {
             color: red;
         }
+
         .active {
             color: green;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>User Payments Report</h1>
@@ -75,7 +106,8 @@
                     <td>{{ row.username }}</td>
                     <td>{{ row.creation_ist }}</td>
                     <td>{{ row.expiry_ist }}</td>
-                    <td class="{{ 'expired' if row.is_expired else 'active' }}">{{ 'Expired' if row.is_expired else 'Active' }}</td>
+                    <td class="{{ 'expired' if row.is_expired else 'active' }}">{{ 'Expired' if row.is_expired else
+                        'Active' }}</td>
                     <td>{{ row.payment_count }}</td>
                     <td>{{ row.total_payment }} {{ row.currency if row.currency else '' }}</td>
                 </tr>
@@ -84,4 +116,5 @@
         </table>
     </div>
 </body>
+
 </html>
