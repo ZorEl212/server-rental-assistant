@@ -93,3 +93,24 @@ class DBStorage:
 
         return count
 
+    def query_object(self, cls, **filters):
+        """
+        Query an object from the database based on the class and given filters.
+        Example: query_object(User, linux_username='john_doe')
+
+        :param cls: The class of the object to query (e.g., User, Rental, etc.)
+        :param filters: Any keyword arguments to use as filters (e.g., linux_username='john_doe')
+        :return: The first object matching the filters, or None if not found
+        """
+        cls = classes[cls] if isinstance(cls, str) else cls
+        if cls not in classes.values():
+            return None  # Return None if the class is not in the list of known classes
+
+        query = self.__session.query(cls)
+
+        # Apply filters dynamically if provided
+        for attr, value in filters.items():
+            query = query.filter(getattr(cls, attr) == value)
+
+        return query.first()  # Return the first matching result, or None if not found
+
