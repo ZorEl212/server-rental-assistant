@@ -15,6 +15,7 @@ from resources.constants import (
     TIME_ZONE,
 )
 
+
 class Auth:
     # --- Authorization ---
     @staticmethod
@@ -44,9 +45,9 @@ class Utilities:
     @staticmethod
     def generate_password():
         return (
-                random.choice(ADJECTIVES)
-                + random.choice(NOUNS)
-                + "".join(random.choices(string.digits, k=4))
+            random.choice(ADJECTIVES)
+            + random.choice(NOUNS)
+            + "".join(random.choices(string.digits, k=4))
         )
 
     @staticmethod
@@ -109,26 +110,39 @@ class SystemUserManager:
     def create_user(username, password):
         hashed_password = subprocess.run(
             ["openssl", "passwd", "-6", password],
-            check=True, capture_output=True, text=True
+            check=True,
+            capture_output=True,
+            text=True,
         ).stdout.strip()
         subprocess.run(
-            ["sudo", "useradd", "-m", "-s", "/bin/bash", "-p", hashed_password, username],
-            check=True
+            [
+                "sudo",
+                "useradd",
+                "-m",
+                "-s",
+                "/bin/bash",
+                "-p",
+                hashed_password,
+                username,
+            ],
+            check=True,
         )
         print(f"System user {username} created successfully.")
 
     @staticmethod
     async def delete_system_user(username):
-        #await client.send_message(ADMIN_ID, f"🗑️ Deleting user `{username}`...")
+        # await client.send_message(ADMIN_ID, f"🗑️ Deleting user `{username}`...")
         subprocess.run(["sudo", "pkill", "-9", "-u", username], check=False)
         try:
             subprocess.run(["sudo", "userdel", "-r", username], check=True)
         except subprocess.CalledProcessError as e:
+            print(f"Error deleting user {username}: {e}")
             return False
-        user = storage.query_object('User', linux_username=username)
+        user = storage.query_object("User", linux_username=username)
         if not user:
+            print(f"User {username} not found in the database.")
             return False
-        rental = storage.query_object('Rental', user_id=user.id)
+        rental = storage.query_object("Rental", user_id=user.id)
         if rental:
             rental.is_active = 0
         storage.delete(user)

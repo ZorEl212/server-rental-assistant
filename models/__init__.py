@@ -1,4 +1,6 @@
 from models.engine.db_engine import DBStorage
+import dotenv
+import os
 from telethon import TelegramClient, events
 from resources.constants import API_ID, API_HASH
 

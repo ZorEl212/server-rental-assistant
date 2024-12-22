@@ -2,18 +2,25 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker, Query
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import or_
-    
+
 from models.baseModel import Base
 from models.users import User
 from models.rentals import Rental
 from models.payments import Payment
 from models.telegram_users import TelegramUser
 
-classes = {'Rental': Rental, 'Payment': Payment, 'User': User, 'TelegramUser': TelegramUser}
+classes = {
+    "Rental": Rental,
+    "Payment": Payment,
+    "User": User,
+    "TelegramUser": TelegramUser,
+}
+
 
 class DBStorage:
     __engine = None
     __session = None
+
     def __init__(self):
         self.__engine = create_engine("sqlite:///server-database.db", echo=False)
 
@@ -116,8 +123,9 @@ class DBStorage:
 
         return query.first()  # Return the first matching result, or None if not found
 
-
-    def join(self, base_cls, related_classes, filters=None, fetch_one=False, outer=False):
+    def join(
+        self, base_cls, related_classes, filters=None, fetch_one=False, outer=False
+    ):
         """
         Generic join method for querying data with joins in SQLAlchemy.
 
@@ -131,7 +139,9 @@ class DBStorage:
         """
         # Start with the base query
         base_cls = classes[base_cls] if isinstance(base_cls, str) else base_cls
-        related_classes = [classes[cls] if isinstance(cls, str) else cls for cls in related_classes]
+        related_classes = [
+            classes[cls] if isinstance(cls, str) else cls for cls in related_classes
+        ]
         query = self.__session.query(base_cls)
 
         # Automatically join related classes based on relationships
@@ -148,7 +158,3 @@ class DBStorage:
 
         # Execute the query and return results
         return query.all() if not fetch_one else query.first()
-
-
-
-

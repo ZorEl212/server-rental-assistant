@@ -9,7 +9,9 @@ class Payment(BaseModel, Base):
 
     user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     amount = Column(REAL, nullable=False)
-    currency = Column(Text, CheckConstraint("currency IN ('INR', 'USD')"), nullable=False)
+    currency = Column(
+        Text, CheckConstraint("currency IN ('INR', 'USD')"), nullable=False
+    )
     payment_date = Column(Integer, nullable=False)
 
     # Relationships
@@ -30,6 +32,7 @@ class Payment(BaseModel, Base):
 
         if self.currency == "USD":
             from models.misc import Utilities
+
             exchange_rate = await Utilities.get_exchange_rate("USD", "INR")
             self.amount = self.amount * exchange_rate
             self.currency = "INR"  # Normalize to INR

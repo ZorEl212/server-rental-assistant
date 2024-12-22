@@ -1,6 +1,7 @@
 import os
 import dotenv
 
+
 def check_env():
     if (
         not os.getenv("API_ID")
@@ -19,6 +20,7 @@ def check_env():
     if not os.getenv("GROUP_ID"):
         # Raise warning if GROUP_ID is not set
         print("Warning: GROUP_ID is not set in .env file. Continuing without it.")
+
 
 dotenv.load_dotenv()
 check_env()

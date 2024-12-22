@@ -1,5 +1,13 @@
 from sqlalchemy import (
-    create_engine, Column, Integer, String, ForeignKey, REAL, Text, CheckConstraint, DateTime
+    create_engine,
+    Column,
+    Integer,
+    String,
+    ForeignKey,
+    REAL,
+    Text,
+    CheckConstraint,
+    DateTime,
 )
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from datetime import datetime
@@ -11,6 +19,7 @@ time = "%Y-%m-%dT%H:%M:%S.%f"
 
 # Define the base class for ORM
 Base = declarative_base()
+
 
 # Define the User class
 class BaseModel:
@@ -41,8 +50,9 @@ class BaseModel:
 
     def __str__(self):
         """String representation of the BaseModel class"""
-        return "[{:s}] ({:s}) {}".format(self.__class__.__name__, self.id,
-                                         self.__dict__)
+        return "[{:s}] ({:s}) {}".format(
+            self.__class__.__name__, self.id, self.__dict__
+        )
 
     def save(self):
         """updates the attribute 'updated_at' with the current datetime"""

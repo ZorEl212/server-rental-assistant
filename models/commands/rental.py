@@ -17,7 +17,7 @@ class PlanRoutes:
         reduced_duration_seconds = Utilities.parse_duration(args[2])
 
         if username == "all":
-            active_rentals = storage.join('Rental', ['User'], {'is_expired': 0})
+            active_rentals = storage.join("Rental", ["User"], {"is_expired": 0})
             for rental in active_rentals:
                 await rental.reduce_plan(reduced_duration_seconds)
 
@@ -30,11 +30,16 @@ class PlanRoutes:
             )
             await event.respond(response)
         else:
-            user = storage.query_object('User', linux_username=username)
+            user = storage.query_object("User", linux_username=username)
             if not user:
                 await event.respond(f"❌ User `{username}` not found.")
                 return
-            rental = storage.join('Rental', ['TelegramUser', 'User'], {'user_id': user.id, 'is_expired': 0}, True)
+            rental = storage.join(
+                "Rental",
+                ["TelegramUser", "User"],
+                {"user_id": user.id, "is_expired": 0},
+                True,
+            )
             if not rental:
                 await event.respond(f"❌ User `{username}` has no active rentals.")
                 return
@@ -66,7 +71,7 @@ class PlanRoutes:
         if len(args) >= 5:
             amount_str = args[3]
             currency = args[4].upper()
-            user = storage.query_object('User', linux_username=username)
+            user = storage.query_object("User", linux_username=username)
             if not user:
                 await event.respond(f"❌ User `{username}` not found.")
                 return
@@ -79,24 +84,29 @@ class PlanRoutes:
             payment.save()
 
         if username == "all":
-            active_rentals = storage.join('Rental', ['User'], {'is_active': 1})
+            active_rentals = storage.join("Rental", ["User"], {"is_active": 1})
             for rental in active_rentals:
                 await rental.extend_plan(additional_seconds)
 
             response = "🔄 All users' plans extended!\n\n"
             response += "\n".join(
                 [
-                    f"👤 User `{rental.user.linux_username}`\n   New expiry date: `{Utilities.get_date_str(rental.expiry_time)}`"
+                    f"👤 User `{rental.user.linux_username}`\n   New expiry date: `{Utilities.get_date_str(rental.end_time)}`"
                     for rental in active_rentals
                 ]
             )
             await event.respond(response)
         else:
-            user = storage.query_object('User', linux_username=username)
+            user = storage.query_object("User", linux_username=username)
             if not user:
                 await event.respond(f"❌ User `{username}` not found.")
                 return
-            rental = storage.join('Rental', ['TelegramUser', 'User'], {'user_id': user.id, 'is_active': 1}, True)
+            rental = storage.join(
+                "Rental",
+                ["TelegramUser", "User"],
+                {"user_id": user.id, "is_active": 1},
+                True,
+            )
             if not rental:
                 await event.respond(f"❌ User `{username}` has no active rentals.")
                 return
@@ -115,7 +125,6 @@ class PlanRoutes:
             )
             await client.send_message(rental.telegram_id, message)
 
-
         if amount_inr is not None:
             await event.respond(
                 f"✅ Amount `{amount_inr:.2f} INR` credited to user `{username}`."
@@ -126,7 +135,7 @@ class PlanRoutes:
         prev_msg = (
             f"⚠️ Plan for user `{username}` has expired. Please take necessary action."
         )
-        rental = storage.query_object('Rental', user_id=username, is_expired=0)
+        rental = storage.query_object("Rental", user_id=username, is_expired=0)
         if rental:
             rental.is_expired = 1
             storage.save()

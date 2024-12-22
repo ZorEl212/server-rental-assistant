@@ -44,15 +44,19 @@ class SystemRoutes:
 
     def generate_html(self):
         # Load the template
-        env = Environment(loader=FileSystemLoader("./resources"))  # Point to resources directory
+        env = Environment(
+            loader=FileSystemLoader("./resources")
+        )  # Point to resources directory
         template = env.get_template("report_template.html")
 
-        user_info = storage.join('User', ['Rental', 'Payment'])
+        user_info = storage.join("User", ["Rental", "Payment"])
         processed_rows = [
             {
                 "user_id": user.id,
                 "username": user.linux_username,
-                "creation_ist": Utilities.get_date_str(int(user.created_at.timestamp())),
+                "creation_ist": Utilities.get_date_str(
+                    int(user.created_at.timestamp())
+                ),
                 "expiry_ist": Utilities.get_date_str(user.rentals[0].end_time),
                 "is_expired": user.rentals[0].is_expired,
                 "total_payment": f"{sum([payment.amount for payment in user.payments]):.2f}",
@@ -82,7 +86,6 @@ class SystemRoutes:
             await event.respond(f"❌ Error generating report: {e}")
             traceback.print_exc()
 
-
     @Auth.authorized_user
     async def broadcast(self, event):
 
@@ -95,7 +98,7 @@ class SystemRoutes:
         # Prepend the message with the sender's name, along with the notice
         message = f"📢 **Broadcast Message**\n\n{message}"
 
-        rentals  = storage.join('Rental', ['TelegramUser'], {'is_active': 1})
+        rentals = storage.join("Rental", ["TelegramUser"], {"is_active": 1})
         for rental in rentals:
             try:
                 await client.send_message(rental.telegram_id, message)
@@ -129,16 +132,15 @@ class SystemRoutes:
             return
 
         user_uuid = event.message.text.split()[1]
-        user = storage.query_object('User', uuid=user_uuid)
+        user = storage.query_object("User", uuid=user_uuid)
 
         if not user:
             await event.respond("❌ Invalid or expired link.")
             return
         username = user.linux_username
         print("Username:", username)
-        rental = storage.query_object('Rental', user_id=user.id)
-        tg_user = storage.query_object('TelegramUser', user_id=user.id)
-
+        rental = storage.query_object("Rental", user_id=user.id)
+        tg_user = storage.query_object("TelegramUser", user_id=user.id)
 
         fetched_user_id = tg_user.tg_user_id if tg_user else None
 
@@ -169,7 +171,8 @@ class SystemRoutes:
             msg = f"[{user_first_name}](tg://user?id={tg_user_id})\n\n"
 
             await event.respond(
-                msg + f"🔑 **Username:** `{username}`\n🔒 **Password:** `{user.linux_password}`"
+                msg
+                + f"🔑 **Username:** `{username}`\n🔒 **Password:** `{user.linux_password}`"
             )
             await client.send_message(
                 ADMIN_ID,
@@ -181,22 +184,27 @@ class SystemRoutes:
 
             if fetched_user_id == tg_user_id:
                 await event.respond(
-                    msg + f"🔑 **Username:** `{username}`\n🔒 **Password:** `{user.linux_password}`"
+                    msg
+                    + f"🔑 **Username:** `{username}`\n🔒 **Password:** `{user.linux_password}`"
                 )
             else:
                 await event.respond(
                     "❌ You are not authorized to get the password for this user."
                 )
 
-
     async def notify_expiry(self):
         while True:
             now = int(time.time())
             twelve_hours_from_now = now + (12 * 60 * 60)
 
-
-            rentals = storage.join('Rental', ['TelegramUser', 'User'], {'sent_expiry_notification': 0})
-            expiring_rentals = [rental for rental in rentals if twelve_hours_from_now >= rental.end_time > now]
+            rentals = storage.join(
+                "Rental", ["TelegramUser", "User"], {"sent_expiry_notification": 0}
+            )
+            expiring_rentals = [
+                rental
+                for rental in rentals
+                if twelve_hours_from_now >= rental.end_time > now
+            ]
 
             for rental in expiring_rentals:
                 rental.sent_expiry_notification = 1
@@ -205,7 +213,9 @@ class SystemRoutes:
                 user = rental.User
                 tg_user = rental.TelegramUser
 
-                remaining_time = datetime.fromtimestamp(rental.end_time) - datetime.now()
+                remaining_time = (
+                    datetime.fromtimestamp(rental.end_time) - datetime.now()
+                )
                 remaining_time_str = ""
                 if remaining_time.days > 0:
                     remaining_time_str += f"{remaining_time.days} days, "
@@ -216,7 +226,9 @@ class SystemRoutes:
                     message = f"⏰ [{tg_user.first_name}](tg://user?id={tg_user.telegram_id}) Your plan for user `{user.linux_username}` will expire in {remaining_time_str}."
                 else:
                     message = f"⏰ Plan for user `{user.linux_username}` will expire in {remaining_time_str}."
-                message += "\n\nPlease contact the admin if you want to extend the plan. 🔄"
+                message += (
+                    "\n\nPlease contact the admin if you want to extend the plan. 🔄"
+                )
                 message += "\nYour data will be deleted after the expiry time. 🗑️"
 
                 if tg_user:
@@ -228,7 +240,11 @@ class SystemRoutes:
                 admin_message = f"⏰ Plan for user `{user.linux_username}` will expire in {remaining_time_str}."
                 await client.send_message(ADMIN_ID, admin_message)
 
-            expired_rentals = [rental for rental in rentals if rental.end_time <= now and rental.is_expired == 0]
+            expired_rentals = [
+                rental
+                for rental in rentals
+                if rental.end_time <= now and rental.is_expired == 0
+            ]
 
             for rental in expired_rentals:
                 rental.is_expired = 1
@@ -241,10 +257,14 @@ class SystemRoutes:
                 message += "\n\nThanks for using our service. 🙏"
                 message += "\nFeel free to contact the admin for any queries. 📞"
 
-                new_password = await SystemUserManager.change_password(user.linux_username)
+                new_password = await SystemUserManager.change_password(
+                    user.linux_username
+                )
 
                 # Remove the authorized ssh keys
-                status, removal_str = await SystemUserManager.remove_ssh_auth_keys(user.linux_username)
+                status, removal_str = await SystemUserManager.remove_ssh_auth_keys(
+                    user.linux_username
+                )
 
                 if tg_user:
                     await client.send_message(tg_user.telegram_id, message)
@@ -255,21 +275,29 @@ class SystemRoutes:
                     f"⚠️ Plan for user `{user.linux_username}` has expired. Please take necessary action.",
                     buttons=[
                         [Button.inline("Cancel", data=f"cancel {user.linux_username}")],
-                        [Button.inline("Delete User", data=f"delete_user {user.linux_username}")],
+                        [
+                            Button.inline(
+                                "Delete User", data=f"delete_user {user.linux_username}"
+                            )
+                        ],
                     ],
                 )
-                await client.send_message(ADMIN_ID,
-                                          f"🔑 New password for user `{user.linux_username}`: `{new_password}`")
+                await client.send_message(
+                    ADMIN_ID,
+                    f"🔑 New password for user `{user.linux_username}`: `{new_password}`",
+                )
                 await client.send_message(ADMIN_ID, f"🔑 {removal_str}")
 
             await asyncio.sleep(60)  # Check every minute
 
     async def handle_clean_db(self, event):
         username = event.data.decode().split()[1]
-        user = storage.query_object('User', linux_username=username)
-        rental = storage.query_object('Rental', user_id=user.id)
+        user = storage.query_object("User", linux_username=username)
+        rental = storage.query_object("Rental", user_id=user.id)
         if not rental:
-            await event.edit(f"❌ Rental for user `{username}` not found in the database.")
+            await event.edit(
+                f"❌ Rental for user `{username}` not found in the database."
+            )
             return
         rental.is_active = 1
         rental.save()

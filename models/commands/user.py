@@ -11,7 +11,13 @@ from models.payments import Payment
 from models.rentals import Rental
 from models.telegram_users import TelegramUser
 from models.users import User
-from resources.constants import SSH_HOSTNAME, SSH_PORT, BE_NOTED_TEXT, ADMIN_ID, TIME_ZONE
+from resources.constants import (
+    SSH_HOSTNAME,
+    SSH_PORT,
+    BE_NOTED_TEXT,
+    ADMIN_ID,
+    TIME_ZONE,
+)
 from models import client
 
 
@@ -62,7 +68,9 @@ class UserRoutes:
             message_str += f"**ℹ️ Notes:**\n{BE_NOTED_TEXT}\n"
 
         user_uuid = str(uuid.uuid4())
-        password_url = f"https://t.me/{(await client.get_me()).username}?start={user_uuid}"
+        password_url = (
+            f"https://t.me/{(await client.get_me()).username}?start={user_uuid}"
+        )
         user = User(linux_username=username, linux_password=password, uuid=user_uuid)
         storage.new(user)
         storage.save()
@@ -83,7 +91,9 @@ class UserRoutes:
             message_str,
             buttons=[[Button.url("Get Password", password_url)]],
         )
-        payment = await Payment.create(user_id=user.id, amount=amount, currency=currency)
+        payment = await Payment.create(
+            user_id=user.id, amount=amount, currency=currency
+        )
         payment.save()
         message_str = (
             f"🔐 **Username:** `{username}`\n"
@@ -112,7 +122,7 @@ class UserRoutes:
         username = command_parts[1]
 
         # Check if the user exists in the database and system
-        user_in_db = storage.query_object('User', linux_username=username)
+        user_in_db = storage.query_object("User", linux_username=username)
         user_in_system = SystemUserManager.is_user_exists(username)
 
         if not user_in_db:
@@ -141,7 +151,7 @@ class UserRoutes:
     @Auth.authorized_user
     async def list_users(self, event):
 
-        users = storage.join('User', ['Rental', 'TelegramUser'], outer=True)
+        users = storage.join("User", ["Rental", "TelegramUser"], outer=True)
         if not users:
             await event.respond("🔍 No users found.")
             return
@@ -157,15 +167,23 @@ class UserRoutes:
             expiry_date_str = Utilities.get_date_str(user.rentals[0].end_time)
 
             if not user.rentals[0].is_expired:
-                remaining_time = expiry_date_ist - datetime.now(pytz.utc).astimezone(ist)
+                remaining_time = expiry_date_ist - datetime.now(pytz.utc).astimezone(
+                    ist
+                )
                 remaining_time_str = ""
                 if remaining_time.days > 0:
                     remaining_time_str += f"{remaining_time.days} days, "
                 remaining_time_str += f"{remaining_time.seconds // 3600} hours, "
                 remaining_time_str += f"{(remaining_time.seconds // 60) % 60} minutes"
 
-                tg_user_id = str(user.telegram_user[0].tg_user_id) if user.telegram_user else None
-                tg_user_first_name = user.telegram_user[0].tg_first_name if user.telegram_user else None
+                tg_user_id = (
+                    str(user.telegram_user[0].tg_user_id)
+                    if user.telegram_user
+                    else None
+                )
+                tg_user_first_name = (
+                    user.telegram_user[0].tg_first_name if user.telegram_user else None
+                )
 
                 if tg_user_id and tg_user_first_name:
                     tg_tag = f"[{tg_user_first_name}](tg://user?id={tg_user_id})"
@@ -212,9 +230,7 @@ class UserRoutes:
         username = event.message.text.split()[1]
         user = storage.query_object(User, linux_username=username)
         if not user:
-            await event.respond(
-                f"❌ No user found for username:`{username}`."
-            )
+            await event.respond(f"❌ No user found for username:`{username}`.")
         telegram_id = storage.query_object(TelegramUser, user_id=user.id)
         storage.delete(telegram_id)
         storage.save()
@@ -264,7 +280,8 @@ class UserRoutes:
             f"🔗 Click the button below to link the Telegram user to the system user `{username}`.",
             buttons=[
                 Button.url(
-                    "Link User", f"https://t.me/{bot_username.username}?start={unique_id}"
+                    "Link User",
+                    f"https://t.me/{bot_username.username}?start={unique_id}",
                 )
             ],
         )

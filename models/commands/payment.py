@@ -2,6 +2,7 @@ from models import storage
 from models.misc import Auth, Utilities
 
 
+
 class PaymentRoutes:
     # /earnings command
     @Auth.authorized_user
@@ -10,7 +11,7 @@ class PaymentRoutes:
         total_earnings = sum(payment.amount for payment in all_payments)
         await event.respond(f"💰 **Total Earnings:** `{total_earnings:.2f} INR`")
 
-
+        
     @Auth.authorized_user
     async def payment_history(self, event):
 

@@ -2,6 +2,7 @@ from models.baseModel import Base, BaseModel
 from sqlalchemy import Column, String, Text, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 
+
 class TelegramUser(BaseModel, Base):
     __tablename__ = "telegram_users"
 
