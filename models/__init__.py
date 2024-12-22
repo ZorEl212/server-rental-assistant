@@ -1,7 +1,6 @@
 from models.engine.db_engine import DBStorage
-import dotenv
-import os
-from telethon import TelegramClient, events
+
+from telethon import TelegramClient
 from resources.constants import API_ID, API_HASH
 
 storage = DBStorage()
@@ -35,6 +34,7 @@ routes = {
     "/unlink_user": user_routes.clear_user,
     "/link_user": user_routes.link_user,
     "/who": system_routes.list_connected_users,
+    "/earnings": payment_routes.show_earnings,
 }
 
 bot = BotManager(client=client, routes=routes)

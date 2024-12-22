@@ -7,7 +7,7 @@ class PaymentRoutes:
     @Auth.authorized_user
     async def show_earnings(self, event):
         all_payments = storage.all("Payment")
-        total_earnings = sum(payment.amount for payment in all_payments)
+        total_earnings = sum(payment.amount for payment in all_payments.values())
         await event.respond(f"💰 **Total Earnings:** `{total_earnings:.2f} INR`")
 
     @Auth.authorized_user
