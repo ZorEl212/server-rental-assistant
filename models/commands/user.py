@@ -71,9 +71,20 @@ class UserRoutes:
         password_url = (
             f"https://t.me/{(await client.get_me()).username}?start={user_uuid}"
         )
-        user = User(linux_username=username, linux_password=password, uuid=user_uuid)
-        storage.new(user)
-        storage.save()
+        user = User(
+            linux_username=username, linux_password=password, uuid=user_uuid, balance=0
+        )
+        try:
+            payment = await Payment.create(
+                user_id=user.id, amount=amount, currency=currency
+            )
+            print(payment.amount)
+            await user.update_balance(payment.amount, "credit")
+            payment.save()
+            user.save()
+        except Exception as e:
+            await event.respond(f"❌ Error creating user `{username}`: {e}")
+            return
 
         rental = Rental(
             user_id=user.id,
@@ -91,10 +102,6 @@ class UserRoutes:
             message_str,
             buttons=[[Button.url("Get Password", password_url)]],
         )
-        payment = await Payment.create(
-            user_id=user.id, amount=amount, currency=currency
-        )
-        payment.save()
         message_str = (
             f"🔐 **Username:** `{username}`\n"
             f"🔑 **Password:** `{password}`\n"
