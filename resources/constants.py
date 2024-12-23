@@ -40,7 +40,7 @@ API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
-GROUP_ID = int(os.getenv("GROUP_ID"))
+GROUP_ID = int(os.getenv("GROUP_ID", 0))
 
 ADJECTIVES = [
     "crazy",
