@@ -31,6 +31,6 @@ class User(BaseModel, Base):
         elif transaction_type == "debit":
             if amount > self.balance:
                 raise ValueError("Insufficient balance.")
-            self.balance -= amount
+            self.balance += amount
         else:
             raise ValueError("Invalid transaction type.")
