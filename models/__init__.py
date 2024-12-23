@@ -34,6 +34,8 @@ routes = {
     "/link_user": user_routes.link_user,
     "/who": system_routes.list_connected_users,
     "/earnings": payment_routes.show_earnings,
+    "/credit": payment_routes.credit_payment,
+    "/debit": payment_routes.debit_payment,
 }
 
 bot = BotManager(client=client, routes=routes)
