@@ -43,9 +43,20 @@ class UserRoutes:
 
         password = Utilities.generate_password()
         expiry_time = int(time.time()) + plan_duration_seconds
+        user_uuid = str(uuid.uuid4())
 
+        user = User(
+            linux_username=username, linux_password=password, uuid=user_uuid, balance=0
+        )
         try:
+            payment = await Payment.create(
+                user_id=user.id, amount=amount, currency=currency
+            )
+            print(payment.amount)
+            await user.update_balance(payment.amount, "credit")
             SystemUserManager.create_user(username, password)
+            payment.save()
+            user.save()
         except Exception as e:
             await event.respond(f"❌ Error creating user `{username}`: {e}")
             return
@@ -67,24 +78,9 @@ class UserRoutes:
         if BE_NOTED_TEXT:
             message_str += f"**ℹ️ Notes:**\n{BE_NOTED_TEXT}\n"
 
-        user_uuid = str(uuid.uuid4())
         password_url = (
             f"https://t.me/{(await client.get_me()).username}?start={user_uuid}"
         )
-        user = User(
-            linux_username=username, linux_password=password, uuid=user_uuid, balance=0
-        )
-        try:
-            payment = await Payment.create(
-                user_id=user.id, amount=amount, currency=currency
-            )
-            print(payment.amount)
-            await user.update_balance(payment.amount, "credit")
-            payment.save()
-            user.save()
-        except Exception as e:
-            await event.respond(f"❌ Error creating user `{username}`: {e}")
-            return
 
         rental = Rental(
             user_id=user.id,
