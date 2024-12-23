@@ -93,7 +93,7 @@ class Utilities:
 
     @classmethod
     async def get_exchange_rate(cls, from_currency, to_currency):
-        url = f"https://api.exchangerate-api.com/v4/latest/{from_currency}"
+        url = f"https://api.exchangerate-api.com/v6/{from_currency}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 data = await response.json()
