@@ -113,6 +113,7 @@ class PlanRoutes:
             return
 
         await rental.extend_plan(additional_seconds)
+        # TO DO: Update price per day of the plan based on current rate.
 
         try:
             amount_str = args[3]

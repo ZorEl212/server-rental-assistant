@@ -89,7 +89,7 @@ class UserRoutes:
             plan_duration=plan_duration_seconds,
             amount=amount,
             currency=currency,
-            exchange_rate=36.0,
+            price_rate=36.0,  # TO DO: Use current price per day
         )
         storage.new(rental)
         storage.save()
