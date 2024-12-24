@@ -293,6 +293,7 @@ class SystemRoutes:
 
             await asyncio.sleep(60)  # Check every minute
 
+    @Auth.authorized_user
     async def handle_clean_db(self, event):
         username = event.data.decode().split()[1]
         user = storage.query_object("User", linux_username=username)

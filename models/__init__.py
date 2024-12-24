@@ -38,4 +38,9 @@ routes = {
     "/debit": payment_routes.debit_payment,
 }
 
-bot = BotManager(client=client, routes=routes)
+CALLBACKS = {
+    "cancel": plan_routes.handle_cancel,
+    "clean_db": system_routes.handle_clean_db,
+    "refresh_connected_users": system_routes.refresh_connected_users,
+}
+bot = BotManager(client=client, routes=routes, callbacks=CALLBACKS)
