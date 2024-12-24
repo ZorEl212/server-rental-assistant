@@ -1,13 +1,16 @@
 import asyncio
 
-from models import bot, plan_routes, system_routes
+from models import bot, system_routes
+from models.commands.system import JobManager
+
+job_manager = JobManager()
 
 
 async def main():
+    await job_manager.init_redis()
     await bot.start()
 
 
 event_loop = asyncio.get_event_loop()
-event_loop.create_task(plan_routes.run_daily_deduction())
-event_loop.create_task(system_routes.notify_expiry())
+event_loop.create_task(job_manager.schedule_jobs())
 event_loop.run_until_complete(main())
