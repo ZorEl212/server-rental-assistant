@@ -17,13 +17,13 @@ class BotManager:
         )
         self.ROUTES: Dict = routes
 
-    def start(self):
-        self.__client.start(bot_token=BOT_TOKEN)
+    async def start(self):
+        await self.__client.start(bot_token=BOT_TOKEN)
         self.__client.add_event_handler(
             self.command_handler, events.NewMessage(pattern="/")
         )
         print("Bot is running...")
-        self.__client.run_until_disconnected()
+        await self.__client.run_until_disconnected()
 
     @property
     def client(self):
