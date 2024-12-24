@@ -89,6 +89,7 @@ class UserRoutes:
             plan_duration=plan_duration_seconds,
             amount=amount,
             currency=currency,
+            exchange_rate=36.0,
         )
         storage.new(rental)
         storage.save()

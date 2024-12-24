@@ -158,3 +158,30 @@ class PlanRoutes:
             await event.edit(prev_msg + "\n\n" + "🚫 Plan canceled.")
             return True
         await event.edit(prev_msg + "\n\n" + "❌ Plan not found.")
+
+    async def run_daily_deduction(self):
+        """Run the task daily at a fixed time."""
+        while True:
+            now = datetime.now()
+            next_run = (now + timedelta(days=1)).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            wait_time = (next_run - now).total_seconds()
+
+            rentals = storage.join("Rental", ["User"], {"is_active": 1})
+            for rental in rentals:
+                if rental.end_time < int(time.time()):
+                    rental.is_expired = 1
+                    storage.save()
+                else:
+                    user = rental.user
+                    try:
+                        await user.deduct_balance(rental.exchange_rate)
+                    except ValueError:
+                        rental.is_active = 0
+                        print(
+                            f"❌ User {user.linux_username} has insufficient balance. Plan canceled."
+                        )
+                        storage.save()
+            storage.save()
+            await asyncio.sleep(wait_time)

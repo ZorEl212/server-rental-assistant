@@ -32,6 +32,7 @@ class Rental(BaseModel, Base):
     sent_expiry_notification = Column(
         Integer, CheckConstraint("sent_expiry_notification IN (0, 1)"), default=0
     )
+    exchange_rate = Column(REAL, nullable=False)
 
     # Relationships
     user = relationship("User", back_populates="rentals")
