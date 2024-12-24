@@ -57,9 +57,8 @@ class PaymentRoutes:
         payment = await Payment.create(
             user_id=user.id, amount=amount, currency=currency
         )
-        payment.save()
         await user.update_balance(payment.amount, "credit")
-        storage.save()
+        payment.save()
 
         await event.respond(
             f"💳 Payment of `{amount:.2f} {currency}` credited to `{username}`.\n"
@@ -90,10 +89,10 @@ class PaymentRoutes:
         try:
             await user.update_balance(payment.amount, "debit")
             payment.save()
-            storage.save()
         except ValueError as e:
             await event.respond(
-                f"❌ Insufficient balance.\nAvailable balance: `{user.balance:.2f}`"
+                f"❌ Insufficient balance.\n"
+                f"💰 Available balance: `{user.balance:.2f}`"
             )
             return
 
