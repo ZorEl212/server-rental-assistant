@@ -154,72 +154,64 @@ class UserRoutes:
     # /list_users command
     @Auth.authorized_user
     async def list_users(self, event):
-
+        """List all users with their rental and status details."""
         users = storage.join("User", ["Rental", "TelegramUser"], outer=True)
         if not users:
             await event.respond("🔍 No users found.")
             return
 
-        # Get the number of active users
-        active_users = [user for user in users if user.rentals[0].is_active]
-
-        response = f"👥 Total Users: {len(active_users)}\n\n"
         ist = pytz.timezone(TIME_ZONE)
+        response = f"👥 Total Users: {len(users)}\n\n"
 
         for user in users:
-            expiry_date_ist = datetime.fromtimestamp(user.rentals[0].end_time, ist)
-            expiry_date_str = Utilities.get_date_str(user.rentals[0].end_time)
+            rental = user.rentals[0] if user.rentals else None
+            telegram_user = user.telegram_user[0] if user.telegram_user else None
 
-            if not user.rentals[0].is_expired:
-                remaining_time = expiry_date_ist - datetime.now(pytz.utc).astimezone(
-                    ist
-                )
-                remaining_time_str = ""
-                if remaining_time.days > 0:
-                    remaining_time_str += f"{remaining_time.days} days, "
-                remaining_time_str += f"{remaining_time.seconds // 3600} hours, "
-                remaining_time_str += f"{(remaining_time.seconds // 60) % 60} minutes"
+            if rental:
+                expiry_date_ist = datetime.fromtimestamp(rental.end_time, ist)
+                expiry_date_str = Utilities.get_date_str(rental.end_time)
+                now = datetime.now(pytz.utc).astimezone(ist)
 
-                tg_user_id = (
-                    str(user.telegram_user[0].tg_user_id)
-                    if user.telegram_user
-                    else None
-                )
-                tg_user_first_name = (
-                    user.telegram_user[0].tg_first_name if user.telegram_user else None
-                )
+                if rental.is_expired or not rental.is_active:
+                    elapsed_time = now - expiry_date_ist
+                    elapsed_time_str = f"{elapsed_time.days} days, {elapsed_time.seconds // 3600} hours, {(elapsed_time.seconds // 60) % 60} minutes"
 
-                if tg_user_id and tg_user_first_name:
-                    tg_tag = f"[{tg_user_first_name}](tg://user?id={tg_user_id})"
+                    tg_tag = (
+                        f"[{telegram_user.tg_first_name}](tg://user?id={telegram_user.tg_user_id})"
+                        if telegram_user
+                        else "Not set"
+                    )
+
+                    response += (
+                        f"❌ Username: `{user.linux_username}`\n"
+                        f"   Telegram: {tg_tag}\n"
+                        f"   Expiry Date: `{expiry_date_str}`\n"
+                        f"   Elapsed Time: `{elapsed_time_str}`\n"
+                        f"   Status: `Expired`\n\n"
+                    )
                 else:
-                    tg_tag = tg_user_first_name if tg_user_first_name else "Not set"
+                    remaining_time = expiry_date_ist - now
+                    remaining_time_str = (
+                        f"{remaining_time.days} days, {remaining_time.seconds // 3600} hours, "
+                        f"{(remaining_time.seconds // 60) % 60} minutes"
+                    )
 
-                response += (
-                    f"✨ Username: `{user.linux_username}`\n"
-                    f"   Telegram: {tg_tag}\n"
-                    f"   Plan: {Utilities.parse_duration_to_human_readable(user.rentals[0].plan_duration)}\n"
-                    f"   Expiry Date: `{expiry_date_str}`\n"
-                    f"   Remaining Time: `{remaining_time_str}`\n"
-                    f"   Status: `Active`\n\n"
-                )
+                    tg_tag = (
+                        f"[{telegram_user.tg_first_name}](tg://user?id={telegram_user.tg_user_id})"
+                        if telegram_user
+                        else "Not set"
+                    )
 
+                    response += (
+                        f"✨ Username: `{user.linux_username}`\n"
+                        f"   Telegram: {tg_tag}\n"
+                        f"   Plan: {Utilities.parse_duration_to_human_readable(rental.plan_duration)}\n"
+                        f"   Expiry Date: `{expiry_date_str}`\n"
+                        f"   Remaining Time: `{remaining_time_str}`\n"
+                        f"   Status: `Active`\n\n"
+                    )
             else:
-                elapsed_time = datetime.now(pytz.utc).astimezone(ist) - expiry_date_ist
-                elapsed_time_str = ""
-                tg_user_first_name = user.telegram_users[0].tg_first_name
-                tg_user_id = str(user.telegram_users[0].tg_user_id)
-                if elapsed_time.days > 0:
-                    elapsed_time_str += f"{elapsed_time.days} days, "
-                elapsed_time_str += f"{elapsed_time.seconds // 3600} hours, "
-                elapsed_time_str += f"{(elapsed_time.seconds // 60) % 60} minutes"
-
-                response += (
-                    f"❌ Username: `{user.linux_username}`\n"
-                    f"   Telegram: [{tg_user_first_name}](tg://user?id={tg_user_id})\n"
-                    f"   Expiry Date: `{expiry_date_str}`\n"
-                    f"   Elapsed Time: `{elapsed_time_str}`\n"
-                    f"   Status: `Expired`\n\n"
-                )
+                response += f"❌ Username: `{user.linux_username}` (No rental information available)\n\n"
 
         await event.respond(response)
 
