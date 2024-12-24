@@ -69,6 +69,7 @@ class SystemRoutes:
     async def generate_report(self, event):
         await event.respond("🔄 Generating report...")
         try:
+            storage.reload()
             html_content = self.generate_html()
 
             # Generate PDF

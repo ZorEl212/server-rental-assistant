@@ -29,7 +29,7 @@ class User(BaseModel, Base):
         if transaction_type == "credit":
             self.balance += amount
         elif transaction_type == "debit":
-            if amount > self.balance:
+            if abs(amount) > self.balance:
                 raise ValueError("Insufficient balance.")
             self.balance += amount
         else:
