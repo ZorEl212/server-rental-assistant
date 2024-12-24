@@ -146,6 +146,7 @@ class PlanRoutes:
                 f"✅ Amount `{amount_inr:.2f} INR` credited to user `{username}`."
             )
 
+    @Auth.authorized_user
     async def handle_cancel(self, event):
         username = event.data.decode().split()[1]
         prev_msg = (

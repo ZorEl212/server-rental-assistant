@@ -295,30 +295,3 @@ class UserRoutes:
             await event.respond(f"🗑️ User `{username}` deleted successfully.")
         else:
             await event.respond(f"❌ Error deleting user `{username}`.")
-
-    async def handle_tglink(self, event):
-        username = event.data.decode().split()[1]
-
-        # Get the user_id from the event
-        user_id = event.sender_id
-        user_first_name = event.sender.first_name
-        user_last_name = event.sender.last_name
-        tg_username = event.sender.username
-
-        # Update the user's Telegram ID in the database
-        user = storage.query_object(User, linux_username=username)
-        if not user:
-            await event.respond(f"❌ User `{username}` not found.")
-            return
-        tg_user = storage.query_object(TelegramUser, user_id=user.id)
-        tg_user.tg_user_id = user_id
-        tg_user.tg_first_name = user_first_name
-        tg_user.tg_last_name = user_last_name
-        tg_user.tg_username = tg_username
-        tg_user.save()
-
-        # Tag the user for future refs
-        msg = f"[{user_first_name}](tg://user?id={user_id})\n\n"
-        await event.edit(
-            msg + f"✅ User `{username}` linked to Telegram user `{tg_username}`."
-        )
