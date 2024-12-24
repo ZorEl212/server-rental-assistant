@@ -34,3 +34,10 @@ class User(BaseModel, Base):
             self.balance += amount
         else:
             raise ValueError("Invalid transaction type.")
+
+    async def deduct_balance(self, amount):
+        """
+        Deduct an amount from the user's balance.
+        :param amount: Amount to deduct.
+        """
+        await self.update_balance(-amount, "debit")
