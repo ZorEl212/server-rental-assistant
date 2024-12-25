@@ -8,7 +8,7 @@ import aiohttp
 import pytz
 
 from models import storage
-from resources.constants import ADJECTIVES, ADMIN_ID, NOUNS, TIME_ZONE
+from resources.constants import ADJECTIVES, ADMIN_ID, NOUNS, TIME_ZONE, EXCHANGE_API_ID
 
 
 class Auth:
@@ -93,11 +93,14 @@ class Utilities:
 
     @classmethod
     async def get_exchange_rate(cls, from_currency, to_currency):
-        url = f"https://api.exchangerate-api.com/v6/{from_currency}"
+        if not EXCHANGE_API_ID:
+            raise ValueError("Exchange API ID not set.")
+
+        url = f"https://v6.exchangerate-api.com/v6/{EXCHANGE_API_ID}/latest/{from_currency}"
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 data = await response.json()
-                return data["rates"][to_currency]
+                return data["conversion_rates"][to_currency]
 
 
 class SystemUserManager:
