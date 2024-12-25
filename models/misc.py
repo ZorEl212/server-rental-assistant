@@ -9,7 +9,7 @@ import aiohttp
 import pytz
 
 from models import storage
-from resources.constants import ADJECTIVES, ADMIN_ID, NOUNS, TIME_ZONE, EXCHANGE_API_ID
+from resources.constants import ADJECTIVES, ADMIN_ID, EXCHANGE_API_ID, NOUNS, TIME_ZONE
 
 
 class Auth:
@@ -337,3 +337,22 @@ class SystemUserManager:
         stdout, _ = await connected_users.communicate()
         connected_users = stdout.decode()
         return connected_users
+
+    @classmethod
+    async def run_command(cls, command):
+        """
+        Run a shell command and return the output.
+
+        Args:
+            command (str): The command to run.
+
+        Returns:
+            str: The output of the command.
+        """
+        process = await asyncio.create_subprocess_shell(
+            command,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, _ = await process.communicate()
+        return stdout.decode()

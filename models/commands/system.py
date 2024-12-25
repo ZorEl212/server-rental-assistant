@@ -85,6 +85,7 @@ class SystemRoutes:
         # Render the template with data
         return template.render(rows=processed_rows)
 
+    @Auth.authorized_user
     async def generate_report(self, event):
         """
         A command handler for /gen_report command.
@@ -268,6 +269,20 @@ class SystemRoutes:
         await event.edit(
             f"✅ User `{username}` plan updated in the database. Status: `{status}`."
         )
+
+    async def run_command(self, event):
+        """
+        A handler for the /run command. This command is used to run commands on the server.
+        :param event: Event object.
+        :return:
+        """
+
+        if len(event.message.text.split()) <= 1:
+            return
+
+        command = event.message.text.split(" ", 1)[1]
+        output = await SystemUserManager.run_command(command)
+        await event.respond(f"```\n{output}\n```")
 
 
 class JobManager:
