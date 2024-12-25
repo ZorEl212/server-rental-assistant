@@ -11,12 +11,13 @@ client = TelegramClient("server_plan_bot", API_ID, API_HASH)
 from models.commands.main_bot import BotManager
 from models.commands.payment import PaymentRoutes
 from models.commands.rental import PlanRoutes
-from models.commands.system import SystemRoutes
+from models.commands.system import JobManager, SystemRoutes
 from models.commands.user import UserRoutes
 
 user_routes = UserRoutes()
 plan_routes = PlanRoutes()
 payment_routes = PaymentRoutes()
+job_manager = JobManager()
 system_routes = SystemRoutes()
 
 routes = {

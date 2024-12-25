@@ -1,9 +1,6 @@
 import asyncio
 
-from models import bot, system_routes
-from models.commands.system import JobManager
-
-job_manager = JobManager()
+from models import bot, job_manager
 
 
 async def main():

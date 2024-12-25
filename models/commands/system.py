@@ -1,4 +1,5 @@
 import asyncio
+import json
 import tempfile
 import time
 import traceback
@@ -226,6 +227,48 @@ class JobManager:
         self.job_id = None
         self.scheduler = AsyncIOScheduler()
 
+    async def save_job_to_redis(
+        self, job_id, func_name, trigger_type, trigger_args, args, name
+    ):
+        job_data = {
+            "job_id": job_id,
+            "func_name": func_name,
+            "trigger_type": trigger_type,
+            "trigger_args": trigger_args,
+            "args": args,
+            "name": name,
+        }
+        await self.redis_conn.hset("jobs", job_id, json.dumps(job_data))
+        print(f"Job {job_id} saved to Redis.")
+
+    async def remove_job_from_redis(self, job_id):
+        await self.redis_conn.hdel("jobs", job_id)
+        print(f"Job {job_id} removed from Redis.")
+
+    async def load_jobs_from_redis(self, job_data):
+        for job_id, job_info in job_data.items():
+            job_info = json.loads(job_info)
+            func = getattr(self, job_info["func_name"], None)
+            if (
+                job_info["name"] != "deduction"
+                and job_info["trigger_type"]["type"] == "DateTrigger"
+            ):
+                job_info["trigger_type"] = DateTrigger(
+                    run_date=datetime.fromisoformat(
+                        job_info["trigger_type"]["run_date"]
+                    )
+                )
+            if func:
+                self.add_job(
+                    func=func,
+                    trigger=job_info["trigger_type"],
+                    trigger_args=job_info["trigger_args"],
+                    job_id=job_id,
+                    args=job_info["args"],
+                    new_job=False,
+                )
+                print(f"Job {job_id} reloaded from Redis.")
+
     async def handle_expired_rental(self, rental_id):
         rental = storage.join("Rental", ["User"], {"id": rental_id}, fetch_one=True)
 
@@ -274,7 +317,7 @@ class JobManager:
         expiration_time = datetime.fromtimestamp(rental.end_time)
         job_id = f"expire_rental_{rental.id}"
 
-        self.scheduler.add_job(
+        self.add_job(
             self.handle_expired_rental,
             trigger=DateTrigger(run_date=expiration_time),
             job_id=job_id,
@@ -323,6 +366,7 @@ class JobManager:
             "Rental",
             ["User", "TelegramUser"],
             {"is_active": 1, "sent_expiry_notification": 0},
+            outer=True,
         )
         for rental in rentals if rentals else []:
             self.schedule_notification_job(rental)
@@ -380,12 +424,30 @@ class JobManager:
         else:
             print(f"Job {event.job_id} executed successfully")
 
+    def serialize_trigger(self, trigger):
+        if isinstance(trigger, DateTrigger):
+            return {
+                "type": "DateTrigger",
+                "run_date": trigger.run_date.isoformat(),  # Serialize datetime as ISO string
+            }
+        raise TypeError(f"Cannot serialize trigger of type {type(trigger).__name__}")
+
     def add_job(
-        self, func, trigger, trigger_args, job_id=None, replace_existing=True, args=None
+        self,
+        func,
+        trigger,
+        trigger_args=None,
+        job_id=None,
+        replace_existing=True,
+        args=None,
+        new_job=True,
+        name=None,
     ):
         """
-        Dynamically add jobs to the scheduler.
+        Dynamically add jobs to the scheduler and save to Redis.
 
+        :param name: The name of the job (typically the schedule type)
+        :param new_job: A flag to determine whether to save the job to Redis
         :param func: The function to be executed by the job
         :param trigger: The type of trigger (e.g., 'interval', 'date', 'cron')
         :param trigger_args: Arguments for the trigger (e.g., interval seconds, date time)
@@ -393,26 +455,42 @@ class JobManager:
         :param replace_existing: Whether to replace an existing job with the same ID
         :param args: Arguments to be passed to the function
         """
+        if trigger_args is None:
+            trigger_args = {}
         self.scheduler.add_job(
             func,
             trigger,
             id=job_id,
             replace_existing=replace_existing,
-            **trigger_args,
+            **trigger_args if trigger_args else {},
             args=args,
+            name=name,
         )
+        if isinstance(trigger, DateTrigger):
+            trigger = self.serialize_trigger(trigger)
+        if new_job:
+            asyncio.create_task(
+                self.save_job_to_redis(
+                    job_id, func.__name__, trigger, trigger_args, args, name
+                )
+            )
 
     async def schedule_jobs(self):
         self.scheduler.add_listener(
             self.job_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR
         )
+        await self.init_redis()
         self.scheduler.start()
         print("Scheduler started.")
 
-        await self.schedule_all_notifications()
+        job_data = await self.redis_conn.hgetall("jobs")
+        if job_data:
+            await self.load_jobs_from_redis(job_data)
+        else:
+            await self.schedule_all_notifications()
 
-        # Schedule expiration jobs for all current rentals
-        await self.schedule_all_rentals()
+            # Schedule expiration jobs for all current rentals
+            await self.schedule_all_rentals()
 
         # Keep the event loop running
         while True:

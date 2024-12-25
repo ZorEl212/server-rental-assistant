@@ -93,12 +93,24 @@ class UserRoutes:
         )
         storage.new(rental)
         storage.save()
-
         await client.send_message(
             event.chat_id,
             message_str,
             buttons=[[Button.url("Get Password", password_url)]],
         )
+        from models import job_manager
+
+        job_manager.add_job(
+            job_manager.deduct_balance,
+            "interval",
+            {"hours": 24},
+            name="deduction",
+            job_id=f"deduct_balance_{rental.id}",
+            args=[rental.id],
+            replace_existing=True,
+        )
+        job_manager.schedule_notification_job(rental)
+        job_manager.schedule_rental_expiration(rental)
         message_str = (
             f"🔐 **Username:** `{username}`\n"
             f"🔑 **Password:** `{password}`\n"
