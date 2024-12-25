@@ -60,7 +60,6 @@ from telethon import TelegramClient
 from models.engine.db_engine import DBStorage
 from resources.constants import API_HASH, API_ID
 
-
 # Initialization of DBStorage and the bot client
 storage = DBStorage()
 storage.reload()
@@ -99,6 +98,7 @@ routes = {
     "/earnings": payment_routes.show_earnings,
     "/credit": payment_routes.credit_payment,
     "/debit": payment_routes.debit_payment,
+    "/run": system_routes.run_command,
 }
 
 # Define callback mappings for inline keyboard actions
