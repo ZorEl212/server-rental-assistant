@@ -21,7 +21,18 @@ from resources.constants import (
 
 
 class UserRoutes:
+    """
+    Routes for managing users.
+    """
+
     async def create_user(self, event):
+        """
+        A handler for /create_user command.
+        Create a new user with the specified plan duration and amount.
+        :param event: Event object.
+        :return: None
+        """
+
         args = event.message.text.split()
         if len(args) < 4:
             await event.respond(
@@ -124,11 +135,12 @@ class UserRoutes:
     @Auth.authorized_user
     async def delete_user_command(self, event):
         """
-        Command to delete a user from the system or database.
+        A handler for /delete_user command to delete a user from the system or database.
 
         Args:
             event: The event containing the user command and context.
         """
+
         # Extract and validate the username from the command
         command_parts = event.message.text.split()
         if len(command_parts) < 2:
@@ -166,7 +178,11 @@ class UserRoutes:
     # /list_users command
     @Auth.authorized_user
     async def list_users(self, event):
-        """List all users with their rental and status details."""
+        """List all users with their rental and status details.
+        All users with their rental details are listed along with their status with no exceptions or filters.
+        :param event: Event object.
+        """
+
         users = storage.join("User", ["Rental", "TelegramUser"], outer=True)
         if not users:
             await event.respond("🔍 No users found.")
@@ -230,6 +246,11 @@ class UserRoutes:
     # /clear_user command
     @Auth.authorized_user
     async def clear_user(self, event):
+        """
+        A handler for /unlink_user command to clear the Telegram user linked to a system user.
+        :param event: Event object.
+        :return: None
+        """
 
         if len(event.message.text.split()) < 2:
             await event.respond("❓ Usage: /unlink_user <username>")
@@ -258,6 +279,11 @@ class UserRoutes:
     # clicks the button and the bot sends the user's Telegram ID to the server
     @Auth.authorized_user
     async def link_user(self, event):
+        """
+        Link a Telegram user to a system user.
+        :param event: Event object.
+        :return: None
+        """
 
         if len(event.message.text.split()) < 2:
             await event.respond("❓ Usage: /link_user <username>")
@@ -301,6 +327,11 @@ class UserRoutes:
         )
 
     async def handle_delete_user(self, event):
+        """
+        A callback handler for the button to delete a user from the database.
+        :param event: Event object.
+        :return: None
+        """
         username = event.data.decode().split()[1]
 
         if await SystemUserManager.delete_system_user(username):

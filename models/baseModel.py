@@ -13,12 +13,21 @@ Base = declarative_base()
 
 # Define the User class
 class BaseModel:
+    """
+    Base class for all models in the ORM.
+    """
+
     id = Column(String(60), primary_key=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
     def __init__(self, *args, **kwargs):
-        """Initialization of the base model"""
+        """Initialization of the base model
+        Args:
+            *args: Unused
+            **kwargs: Arbitrary keyword arguments
+        """
+
         if kwargs:
             for key, value in kwargs.items():
                 if key != "__class__":
@@ -45,13 +54,23 @@ class BaseModel:
         )
 
     def save(self):
-        """updates the attribute 'updated_at' with the current datetime"""
+        """
+        Save the current instance to the storage. The instance is stored in the current session and
+        the session is committed to the database.
+        At the moment it should only be used when creating a new instance.
+        :return: None
+        """
+
         self.updated_at = datetime.utcnow()
         models.storage.new(self)
         models.storage.save()
 
     def to_dict(self, save_fs=None):
-        """returns a dictionary containing all keys/values of the instance"""
+        """
+        Create a dictionary representation of the instance.
+        :param save_fs: If True, the password field is not returned.
+        :return: A dictionary representation of the instance.
+        """
         new_dict = self.__dict__.copy()
         if "created_at" in new_dict:
             new_dict["created_at"] = new_dict["created_at"].strftime(time)
@@ -61,10 +80,14 @@ class BaseModel:
         if "_sa_instance_state" in new_dict:
             del new_dict["_sa_instance_state"]
         if save_fs is None:
-            if "password" in new_dict:
-                del new_dict["password"]
+            if "linux_password" in new_dict:
+                del new_dict["linux_password"]
         return new_dict
 
     def delete(self):
-        """delete the current instance from the storage"""
+        """
+        Delete the current instance from the storage.
+        Note: DO NOT use this method at the moment. It is not implemented.
+        :return: True if successful, False otherwise.
+        """
         pass

@@ -6,10 +6,30 @@ from sqlalchemy.orm import relationship
 from models.baseModel import Base, BaseModel
 
 
-# Rentals Table
 class Rental(BaseModel, Base):
     """
-    Rental class to store user rental information.
+    Represents a rental record for a user.
+
+    This class stores details about user rentals, including duration, amount, currency,
+    and rental state (e.g., active or expired). It also includes methods to modify and manage
+    rental plans.
+
+    Attributes:
+        user_id (str): Foreign key linking to the user's ID.
+        telegram_id (int): Foreign key linking to the user's Telegram ID.
+        start_time (int): Unix timestamp indicating the start of the rental.
+        end_time (int): Unix timestamp indicating the end of the rental.
+        plan_duration (int): Duration of the rental plan in seconds.
+        amount (float): Amount paid for the rental.
+        currency (str): Currency used for payment ("INR" or "USD").
+        is_expired (int): Indicates if the rental has expired (0 for no, 1 for yes).
+        is_active (int): Indicates if the rental is active (0 for no, 1 for yes).
+        sent_expiry_notification (int): Indicates if the expiry notification has been sent (0 for no, 1 for yes).
+        price_rate (float): Price rate applied to the rental.
+
+    Relationships:
+        user: Relationship linking to the User table.
+        telegram_user: Relationship linking to the TelegramUser table.
     """
 
     __tablename__ = "rentals"
@@ -39,6 +59,19 @@ class Rental(BaseModel, Base):
     telegram_user = relationship("TelegramUser")
 
     async def modify_plan_duration(self, duration_change_seconds, action="reduced"):
+        """
+        Modifies the rental plan duration by adjusting the end time.
+
+        Args:
+            duration_change_seconds (int): The number of seconds to add or subtract from the plan duration.
+            action (str): Specifies the action ("reduced" or "extended"). Defaults to "reduced".
+
+        Returns:
+            None
+
+        Note:
+            If the new end time is in the past and the action is "reduced", no changes are made.
+        """
         expiry_time = self.end_time
         new_expiry_time = expiry_time + duration_change_seconds
 
@@ -47,11 +80,35 @@ class Rental(BaseModel, Base):
         self.end_time = new_expiry_time
 
     async def extend_plan(self, additional_seconds):
+        """
+        Extends the rental plan duration by a specified number of seconds.
+
+        Args:
+            additional_seconds (int): The number of seconds to add to the plan duration.
+
+        Returns:
+            None
+
+        Side Effects:
+            Resets the expiry notification flag and sets the rental to active and not expired.
+        """
         await self.modify_plan_duration(additional_seconds, action="extended")
         self.sent_expiry_notification = 0
         self.is_expired = 0
         self.save()
 
     async def reduce_plan(self, reduced_duration_seconds):
+        """
+        Reduces the rental plan duration by a specified number of seconds.
+
+        Args:
+            reduced_duration_seconds (int): The number of seconds to subtract from the plan duration.
+
+        Returns:
+            None
+
+        Side Effects:
+            Updates the end time and saves the changes to the database.
+        """
         await self.modify_plan_duration(-reduced_duration_seconds, action="reduced")
         self.save()

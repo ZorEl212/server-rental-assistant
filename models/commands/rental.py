@@ -4,8 +4,20 @@ from models.payments import Payment
 
 
 class PlanRoutes:
+    """
+    Routes for managing rental plans.
+    All plan (rental) related commands are defined here.
+    """
+
     @Auth.authorized_user
     async def reduce_plan(self, event):
+        """
+        Reduce the plan duration for users.
+        Reduces the plan duration by the specified amount for a specific or all users.
+        :param event: Event object.
+        :return: None
+        """
+
         args = event.message.text.split()
         if len(args) < 3:
             await event.respond(
@@ -55,6 +67,16 @@ class PlanRoutes:
     # /extend_plan command
     @Auth.authorized_user
     async def extend_plan(self, event):
+        """
+        Extend the plan duration for users.
+        Extends the plan duration by the specified amount for a specific or all users.
+        When extending the plan, the user's balance is also updated according
+        to payment amount. along with the plan duration.
+        But in cases of "all" only the duration is updated.
+        :param event: Event object.
+        :return: None
+        """
+
         args = event.message.text.split()
         if len(args) < 3:
             await event.respond(
@@ -145,6 +167,12 @@ class PlanRoutes:
 
     @Auth.authorized_user
     async def handle_cancel(self, event):
+        """
+        A callback query handler to cancel the plan for a user.
+        :param event: Event object.
+        :return: None
+        """
+    
         username = event.data.decode().split()[1]
         prev_msg = (
             f"⚠️ Plan for user `{username}` has expired. Please take necessary action."

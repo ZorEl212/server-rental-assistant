@@ -5,15 +5,33 @@ from models.users import User
 
 
 class PaymentRoutes:
+    """
+    Routes for managing payments and
+    All payment related commands are defined here.
+    """
+
     # /earnings command
     @Auth.authorized_user
     async def show_earnings(self, event):
+        """
+        Show total earnings from all payments.
+        Includes payments and refunds from all users in INR.
+        :param event: Event object.
+        :return: None
+        """
+
         all_payments = storage.all("Payment")
         total_earnings = sum(payment.amount for payment in all_payments.values())
         await event.respond(f"💰 **Total Earnings:** `{total_earnings:.2f} INR`")
 
     @Auth.authorized_user
     async def payment_history(self, event):
+        """
+        Show payment history for a user.
+        Shows all payments made by a user including refunds.
+        :param event: Event object.
+        :return: None
+        """
 
         if len(event.message.text.split()) < 2:
             await event.respond("❓ Usage: /payment_history <username>")
@@ -38,6 +56,13 @@ class PaymentRoutes:
 
     @Auth.authorized_user
     async def credit_payment(self, event):
+        """
+        Credit payment to a user.
+        Add a payment to a user's balance.
+        :param event: Event object.
+        :return: None
+        """
+
         args = event.message.text.split()
         if len(args) < 4:
             await event.respond(
@@ -67,6 +92,12 @@ class PaymentRoutes:
 
     @Auth.authorized_user
     async def debit_payment(self, event):
+        """
+        Refund payment to a user. Deduct payment from a user's balance.
+        :param event: Event object.
+        :return: None
+        """
+        
         args = event.message.text.split()
         if len(args) < 4:
             await event.respond(

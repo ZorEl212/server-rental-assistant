@@ -5,6 +5,16 @@ from models.baseModel import Base, BaseModel
 
 
 class User(BaseModel, Base):
+    """
+    User model representing a system user with associated information and balances.
+
+    Attributes:
+        uuid (Text): Unique identifier for the user.
+        linux_username (Text): Linux system username for the user.
+        linux_password (Text): Linux system password for the user.
+        balance (Integer): Current balance of the user, defaults to 0.
+    """
+
     __tablename__ = "users"
 
     uuid = Column(Text, unique=True, default=None)
@@ -21,11 +31,16 @@ class User(BaseModel, Base):
 
     async def update_balance(self, amount, transaction_type):
         """
-        Record a transaction, updating the user's balance.
-        :param amount: Amount to credit or debit.
-        :param transaction_type: 'payment' or 'refund'.
-        """
+        Update the user's balance by recording a transaction.
 
+        Args:
+            amount (int): The amount to be credited or debited.
+            transaction_type (str): The type of transaction ('credit' or 'debit').
+
+        Raises:
+            ValueError: If an invalid transaction type is provided or if there
+                        is an attempt to debit more than the available balance.
+        """
         if transaction_type == "credit":
             self.balance += amount
         elif transaction_type == "debit":
@@ -38,6 +53,11 @@ class User(BaseModel, Base):
     async def deduct_balance(self, amount):
         """
         Deduct an amount from the user's balance.
-        :param amount: Amount to deduct.
+
+        Args:
+            amount (int): The amount to be deducted.
+
+        Raises:
+            ValueError: If the balance is insufficient for the deduction.
         """
         await self.update_balance(-amount, "debit")
