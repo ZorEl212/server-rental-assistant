@@ -3,3 +3,6 @@ env/
 *.session
 .env
 *.db
+notes.txt
+docs/*
+*.session-journal
