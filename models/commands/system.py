@@ -4,7 +4,7 @@ import tempfile
 import traceback
 from datetime import datetime, timedelta
 
-import aioredis
+import redis.asyncio as redis
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.date import DateTrigger
@@ -653,4 +653,6 @@ class JobManager:
         :return: None
         """
 
-        self.redis_conn = aioredis.from_url("redis://localhost", decode_responses=True)
+        self.redis_conn = redis.Redis(
+            host="localhost", port=6379, db=0, decode_responses=True
+        )
