@@ -187,14 +187,17 @@ class UserRoutes:
         """
 
         users = storage.join("User", ["Rental", "TelegramUser"], outer=True)
-        if not users:
+        active_users = [
+            user for user in users if user.rentals and user.rentals[0].is_active
+        ]
+        if not active_users:
             await event.respond("🔍 No users found.")
             return
 
         ist = pytz.timezone(TIME_ZONE)
-        response = f"👥 Total Users: {len(users)}\n\n"
+        response = f"👥 Total Users: {len(active_users)}\n\n"
 
-        for user in users:
+        for user in active_users:
             rental = user.rentals[0] if user.rentals else None
             telegram_user = user.telegram_user[0] if user.telegram_user else None
 
