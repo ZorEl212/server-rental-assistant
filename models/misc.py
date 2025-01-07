@@ -1,10 +1,12 @@
 import asyncio
 import datetime
+import os
 import random
 import string
 import subprocess
 import time
 from functools import wraps
+import crypt
 
 import aiohttp
 import pytz
@@ -270,12 +272,8 @@ class SystemUserManager:
             subprocess.CalledProcessError: If the password change fails.
         """
         password = Utilities.generate_password()
-        hashed_password = subprocess.run(
-            ["openssl", "passwd", "-6", password],
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
+        salt = f"$6${os.urandom(16).hex()}"
+        hashed_password = crypt.crypt(password, salt)
         subprocess.run(
             ["sudo", "usermod", "-p", hashed_password, username],
             check=True,
