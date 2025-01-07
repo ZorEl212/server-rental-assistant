@@ -90,4 +90,5 @@ class BaseModel:
         Note: DO NOT use this method at the moment. It is not implemented.
         :return: True if successful, False otherwise.
         """
-        pass
+        models.storage.delete(self)
+        models.storage.save()
