@@ -196,7 +196,12 @@ class Utilities:
         for rental in expired_rentals:
             print(f"Deactivating rental for user {rental.user.linux_username}")
             rental.is_expired = 1
-            rental.save()
+            password = await SystemUserManager.change_password(
+                rental.user.linux_username
+            )
+            await SystemUserManager.remove_ssh_auth_keys(rental.user.linux_username)
+            rental.user.linux_password = password
+            storage.save()
 
 
 class SystemUserManager:
