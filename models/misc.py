@@ -239,19 +239,10 @@ class SystemUserManager:
         subprocess.run(["sudo", "pkill", "-9", "-u", username], check=False)
         try:
             subprocess.run(["sudo", "userdel", "-r", username], check=True)
+            return True
         except subprocess.CalledProcessError as e:
             print(f"Error deleting user {username}: {e}")
             return False
-        user = storage.query_object("User", linux_username=username)
-        if not user:
-            print(f"User {username} not found in the database.")
-            return False
-        rental = storage.query_object("Rental", user_id=user.id)
-        if rental:
-            rental.is_active = 0
-        storage.delete(user)
-        storage.save()
-        return True
 
     @classmethod
     async def change_password(cls, username):
