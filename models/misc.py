@@ -3,6 +3,7 @@ import datetime
 import random
 import string
 import subprocess
+import time
 from functools import wraps
 
 import aiohttp
@@ -184,6 +185,16 @@ class Utilities:
             async with session.get(url) as response:
                 data = await response.json()
                 return data["conversion_rates"][to_currency]
+
+    @classmethod
+    async def deactivate_expired_rentals(cls):
+        now = int(time.time())
+        rentals = storage.join("Rental", ["User"], {"is_expired": 0})
+        expired_rentals = [rental for rental in rentals if rental.end_time < now]
+        for rental in expired_rentals:
+            print(f"Deactivating rental for user {rental.user.linux_username}")
+            rental.is_expired = 1
+            rental.save()
 
 
 class SystemUserManager:
