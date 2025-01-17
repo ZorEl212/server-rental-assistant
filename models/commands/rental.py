@@ -53,11 +53,16 @@ class PlanRoutes:
                 ["TelegramUser", "User"],
                 {"user_id": user.id, "is_expired": 0},
                 True,
+                True,
             )
             if not rental:
                 await event.respond(f"❌ User `{username}` has no active rentals.")
                 return
             await rental.reduce_plan(reduced_duration_seconds)
+            from models import job_manager
+
+            job_manager.schedule_notification_job(rental)
+            job_manager.schedule_rental_expiration(rental)
             await event.respond(
                 f"🔄 User `{username}`'s plan reduced!\n\n"
                 f"👤 User `{username}`\n   New expiry date: `{Utilities.get_date_str(rental.end_time)}`"
@@ -140,6 +145,10 @@ class PlanRoutes:
             amount_inr = payment.amount
             await user.update_balance(payment.amount, "credit")
             payment.save()
+            from models import job_manager
+
+            job_manager.schedule_notification_job(rental)
+            job_manager.schedule_rental_expiration(rental)
         except ValueError:
             await event.respond("❌ Invalid amount or currency.")
             return
