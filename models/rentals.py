@@ -72,8 +72,9 @@ class Rental(BaseModel, Base):
         Note:
             If the new end time is in the past and the action is "reduced", no changes are made.
         """
-        expiry_time = self.end_time
-        new_expiry_time = expiry_time + duration_change_seconds
+        if self.end_time < int(time.time()):
+            self.end_time = int(time.time())
+        new_expiry_time = self.end_time + duration_change_seconds
 
         if new_expiry_time < int(time.time()) and action == "reduced":
             return
