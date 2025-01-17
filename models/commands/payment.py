@@ -71,7 +71,12 @@ class PaymentRoutes:
             return
 
         username = args[1]
-        amount = float(args[2])
+        try:
+            amount = float(args[2])
+        except ValueError:
+            await event.respond("❌ Invalid amount. Please provide a valid number.")
+            return
+
         currency = args[3]
 
         user: User = storage.query_object("User", linux_username=username)
@@ -79,15 +84,23 @@ class PaymentRoutes:
             await event.respond(f"❌ User `{username}` not found.")
             return
 
+        if not user.rentals:
+            await event.respond(f"❌ User `{username}` has no active rentals.")
+            return
+
         payment = await Payment.create(
             user_id=user.id, amount=amount, currency=currency
         )
-        await user.update_balance(payment.amount, "credit")
+
+        new_balance = user.balance + payment.amount
+
+        # Update the user's balance with the new amount
+        await user.update_balance(new_balance, "credit")
         payment.save()
 
         await event.respond(
-            f"💳 Payment of `{amount:.2f} {currency}` credited to `{username}`.\n"
-            f"💰 **Available Balance:** `{user.balance:.2f} INR`"
+            f"💳 Payment of `{payment.amount:.2f} {currency}` credited to `{username}`.\n"
+            f"💰 **Available Balance:** `{user.balance:.2f} {currency}`"
         )
 
     @Auth.authorized_user
