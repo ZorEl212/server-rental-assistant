@@ -1,3 +1,5 @@
+import time
+
 from sqlalchemy import Column, Integer, String, Text
 from sqlalchemy.orm import relationship
 
@@ -21,6 +23,7 @@ class User(BaseModel, Base):
     linux_username = Column(Text, unique=True, nullable=False)
     linux_password = Column(Text, nullable=False)
     balance = Column(Integer, default=0)
+    last_deduction_time = Column(Integer, default=time.time())
 
     # Relationships
     telegram_user = relationship(
