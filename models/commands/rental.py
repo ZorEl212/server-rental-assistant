@@ -1,3 +1,5 @@
+import time
+
 from models import client, storage
 from models.misc import Auth, Utilities
 from models.payments import Payment
@@ -57,6 +59,14 @@ class PlanRoutes:
             )
             if not rental:
                 await event.respond(f"❌ User `{username}` has no active rentals.")
+                return
+            remaining_time = rental.end_time - time.time()
+            if remaining_time < reduced_duration_seconds:
+                await event.respond(
+                    f"⚠️ Specified reduction time exceeds user's plan by: "
+                    f"""`{Utilities.parse_duration_to_human_readable(
+                        int(abs(reduced_duration_seconds - remaining_time)))}`\n"""
+                )
                 return
             await rental.reduce_plan(reduced_duration_seconds)
             from models import job_manager
@@ -181,7 +191,7 @@ class PlanRoutes:
         :param event: Event object.
         :return: None
         """
-    
+
         username = event.data.decode().split()[1]
         prev_msg = (
             f"⚠️ Plan for user `{username}` has expired. Please take necessary action."
