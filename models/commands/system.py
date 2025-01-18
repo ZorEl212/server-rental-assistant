@@ -294,6 +294,7 @@ class JobManager:
 
     redis_conn = None
     scheduler = None
+    DEDUCTION_HOUR = 6
 
     def __init__(self):
         self.scheduler: AsyncIOScheduler = AsyncIOScheduler()
@@ -599,7 +600,7 @@ class JobManager:
 
         self.add_job(
             self.deduct_daily_rental,
-            trigger=CronTrigger(hour=6, minute=0),
+            trigger=CronTrigger(hour=self.DEDUCTION_HOUR, minute=0),
             job_id="deduction",
             replace_existing=True,
             name="deduction",
@@ -707,6 +708,12 @@ class JobManager:
             # Schedule expiration jobs for all current rentals
             await self.schedule_all_rentals()
             await self.schedule_deduction()
+
+        current_time = datetime.now()
+        if (
+            current_time.hour >= self.DEDUCTION_HOUR and current_time.minute > 0
+        ):  # Deduct if the current time is past the deduction hour (When the script starts)
+            await self.deduct_daily_rental()
 
         # Keep the event loop running
         while True:
