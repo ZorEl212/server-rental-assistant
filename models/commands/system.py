@@ -9,6 +9,7 @@ import redis.asyncio as redis
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.date import DateTrigger
+from apscheduler.triggers.cron import CronTrigger
 from jinja2 import Environment, FileSystemLoader
 from telethon import Button
 from weasyprint import HTML
@@ -359,6 +360,12 @@ class JobManager:
                         job_info["trigger_type"]["run_date"]
                     )
                 )
+            if job_info["name"] == "deduction" or job_info["job_id"] == "deduction":
+                if job_info["trigger_type"]["type"] == "CronTrigger":
+                    job_info["trigger_type"] = CronTrigger(
+                        hour=job_info["trigger_type"]["hour"],
+                        minute=job_info["trigger_type"]["min"],
+                    )
             if func:
                 self.add_job(
                     func=func,
@@ -420,6 +427,41 @@ class JobManager:
             rental.is_expired = 1
             rental.is_active = 0
         storage.save()
+
+    async def deduct_daily_rental(self):
+        """
+        Deducts rental charges from user balances on a daily basis.
+        """
+        # Get all active rentals
+        active_rentals = storage.all(
+            "Rental", filters={"is_active": 1, "is_expired": 0}
+        )
+
+        current_time = int(time.time())  # Get current time in Unix timestamp
+
+        for rental in active_rentals.values():
+            # Ensure the user has enough balance to cover the deduction
+            user = rental.user  # Assuming a relationship exists between Rental and User
+            full_day = (current_time - user.last_deduction_time) // 86400  # days
+            total_deduction = full_day * rental.price_rate
+            if full_day >= 1 and user.balance >= total_deduction:
+                new_balance = user.balance - total_deduction
+                await user.update_balance(
+                    new_balance, "debit"
+                )  # Update balance with deduction
+                user.last_deduction_time = current_time
+                storage.save()
+
+                # Respond to the user or log the deduction (optional)
+                print(
+                    f"Deducted {total_deduction} {rental.currency} from {user.linux_username}'s balance."
+                )
+            else:
+                # Handle case when balance is insufficient
+                print(
+                    f"Insufficient balance for {user.linux_username} to deduct rental fee."
+                    f" Balance: {user.balance}, Deduction: {total_deduction}"
+                )
 
     def schedule_rental_expiration(self, rental):
         """
@@ -548,27 +590,21 @@ class JobManager:
         for rental in rentals if rentals else []:
             self.schedule_rental_expiration(rental)
 
-    @staticmethod
-    async def deduct_balance(rental_id):
+    async def schedule_deduction(self):
         """
-        Deduct the balance from the user's account when the rental plan is activated.
-        Deduction will be done based on the price rate of the plan daily.
-        :param rental_id: The ID of the rental plan.
+        Schedule the daily deduction job for all active rentals.
+        This method will be called when the system starts to schedule daily deduction jobs for all active rentals.
         :return: None
         """
 
-        rental = storage.join("Rental", ["User"], {"id": rental_id}, fetch_one=True)
-        if rental:
-            user = rental.user
-            try:
-                user.deduct_balance(rental.price_rate)
-                print(f"✅ Deducted balance for user {user.linux_username}")
-                storage.save()
-            except ValueError:
-                print(
-                    f"❌ User {user.linux_username} has insufficient balance.\n"
-                    f"Please credit the user's account to extend the plan."
-                )
+        self.add_job(
+            self.deduct_daily_rental,
+            trigger=CronTrigger(hour=6, minute=0),
+            job_id="deduction",
+            replace_existing=True,
+            name="deduction",
+        )
+        print("Scheduled daily deduction job.")
 
     def job_listener(self, event):
         """
@@ -596,6 +632,12 @@ class JobManager:
             return {
                 "type": "DateTrigger",
                 "run_date": trigger.run_date.isoformat(),  # Serialize datetime as ISO string
+            }
+        elif isinstance(trigger, CronTrigger):
+            return {
+                "type": "CronTrigger",
+                "hour": int(str(trigger.fields[5])),
+                "min": int(str(trigger.fields[6])),
             }
         raise TypeError(f"Cannot serialize trigger of type {type(trigger).__name__}")
 
@@ -633,7 +675,7 @@ class JobManager:
             args=args,
             name=name,
         )
-        if isinstance(trigger, DateTrigger):
+        if isinstance(trigger, DateTrigger) or isinstance(trigger, CronTrigger):
             trigger = self.serialize_trigger(trigger)
         if new_job:
             asyncio.create_task(
@@ -664,6 +706,7 @@ class JobManager:
 
             # Schedule expiration jobs for all current rentals
             await self.schedule_all_rentals()
+            await self.schedule_deduction()
 
         # Keep the event loop running
         while True:
