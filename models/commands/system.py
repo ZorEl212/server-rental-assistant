@@ -1,6 +1,7 @@
 import asyncio
 import json
 import tempfile
+import time
 import traceback
 from datetime import datetime, timedelta
 
@@ -347,6 +348,12 @@ class JobManager:
                 job_info["name"] != "deduction"
                 and job_info["trigger_type"]["type"] == "DateTrigger"
             ):
+                run_date = datetime.fromisoformat(
+                    job_info["trigger_type"]["run_date"]
+                ).replace(tzinfo=None)
+                if run_date < datetime.now():
+                    await self.remove_job_from_redis(job_id)
+                    continue
                 job_info["trigger_type"] = DateTrigger(
                     run_date=datetime.fromisoformat(
                         job_info["trigger_type"]["run_date"]
