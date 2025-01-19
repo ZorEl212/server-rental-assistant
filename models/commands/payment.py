@@ -92,10 +92,10 @@ class PaymentRoutes:
             user_id=user.id, amount=amount, currency=currency
         )
 
-        new_balance = user.balance + payment.amount
+        amount = payment.amount
 
         # Update the user's balance with the new amount
-        await user.update_balance(new_balance, "credit")
+        await user.update_balance(amount, "credit")
         payment.save()
 
         await event.respond(
@@ -110,7 +110,7 @@ class PaymentRoutes:
         :param event: Event object.
         :return: None
         """
-        
+
         args = event.message.text.split()
         if len(args) < 4:
             await event.respond(
