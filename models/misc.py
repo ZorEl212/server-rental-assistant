@@ -1,14 +1,14 @@
 import asyncio
 import datetime
-import os
+import getpass
 import random
 import string
 import subprocess
 import time
 from functools import wraps
-import crypt
 
 import aiohttp
+import pexpect
 import pytz
 
 from models import storage
@@ -197,7 +197,7 @@ class Utilities:
             print(f"Deactivating rental for user {rental.user.linux_username}")
             rental.is_expired = 1
             password = await SystemUserManager.change_password(
-                rental.user.linux_username
+                username=rental.user.linux_username
             )
             await SystemUserManager.remove_ssh_auth_keys(rental.user.linux_username)
             rental.user.linux_password = password
@@ -265,25 +265,50 @@ class SystemUserManager:
     @classmethod
     async def change_password(cls, username):
         """
-        Change the password for a system user.
+        Change the password for a system user using an interactive method with retries for sudo password.
 
         Args:
             username (str): The username of the user whose password will be changed.
-
         Returns:
             str: The new password.
-
         Raises:
-            subprocess.CalledProcessError: If the password change fails.
+            RuntimeError: If the password change fails.
         """
         password = Utilities.generate_password()
-        salt = f"$6${os.urandom(16).hex()}"
-        hashed_password = crypt.crypt(password, salt)
-        subprocess.run(
-            ["sudo", "usermod", "-p", hashed_password, username],
-            check=True,
-        )
-        return password
+        max_retries = 3  # Max retries for sudo password
+        retries = 0
+
+        try:
+            child = pexpect.spawn(f"sudo passwd {username}", timeout=60)
+
+            while retries <= max_retries:
+                index = child.expect(
+                    [
+                        r"\[sudo\] password for .*:",
+                        "New password:",
+                        pexpect.EOF,
+                        pexpect.TIMEOUT,
+                    ]
+                )
+                if index == 0:  # Sudo password prompt
+                    if retries == max_retries:
+                        raise RuntimeError("Maximum sudo password retries exceeded.")
+                    child.sendline(getpass.getpass("Enter your sudo password: "))
+                    retries += 1
+                elif index == 1:  # New password prompt
+                    break
+                else:  # EOF or TIMEOUT
+                    raise RuntimeError("Unexpected termination or timeout.")
+
+            child.sendline(password)
+            child.expect("Retype new password:")
+            child.sendline(password)
+            child.expect(pexpect.EOF)
+            print("Password successfully changed.")
+            return password
+
+        except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF) as e:
+            raise RuntimeError("Error during password change.") from e
 
     @classmethod
     async def remove_ssh_auth_keys(cls, username) -> tuple[bool, str]:
