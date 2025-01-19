@@ -1,15 +1,13 @@
 import asyncio
 import datetime
-import getpass
 import random
 import string
-import subprocess
 import time
 from functools import wraps
 
 import aiohttp
-import pexpect
 import pytz
+import sh
 
 from models import storage
 from resources.constants import ADJECTIVES, ADMIN_ID, EXCHANGE_API_ID, NOUNS, TIME_ZONE
@@ -220,28 +218,19 @@ class SystemUserManager:
             password (str): The password for the new user.
 
         Raises:
-            subprocess.CalledProcessError: If user creation fails.
+            sh.ErrorReturnCode: If user creation fails.
         """
-        hashed_password = subprocess.run(
-            ["openssl", "passwd", "-6", password],
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-        subprocess.run(
-            [
-                "sudo",
-                "useradd",
-                "-m",
-                "-s",
-                "/bin/bash",
-                "-p",
-                hashed_password,
-                username,
-            ],
-            check=True,
-        )
-        print(f"System user {username} created successfully.")
+        try:
+            # Create the system user interactively using `adduser`
+            sh.sudo.adduser(username, "--gecos", "''", "--disabled-password")
+
+            # Set the user's password
+            sh.sudo.chpasswd(_in=f"{username}:{password}")
+
+            print(f"System user {username} created successfully.")
+        except sh.ErrorReturnCode as e:
+            print(f"Error creating user {username}: {e.stderr.decode()}")
+            raise
 
     @staticmethod
     async def delete_system_user(username):
@@ -254,12 +243,18 @@ class SystemUserManager:
         Returns:
             bool: True if the user was deleted successfully, False otherwise.
         """
-        subprocess.run(["sudo", "pkill", "-9", "-u", username], check=False)
         try:
-            subprocess.run(["sudo", "userdel", "-r", username], check=True)
+            sh.contrib.sudo.pkill(
+                "-9", "-u", username, _ok_code=[0, 1]
+            )  # Allow exit codes 0 (success) and 1 (no processes found)
+
+            sh.contrib.sudo.userdel(
+                "-r", username, _ok_code=[0, 12]
+            )  # Allow exit code 12 (mail spool (/var/mail/[username]) not found)
+
             return True
-        except subprocess.CalledProcessError as e:
-            print(f"Error deleting user {username}: {e}")
+        except sh.ErrorReturnCode as e:
+            print(f"Error deleting user {username}: {e.stderr.decode()}")
             return False
 
     @classmethod
@@ -275,57 +270,30 @@ class SystemUserManager:
             RuntimeError: If the password change fails.
         """
         password = Utilities.generate_password()
-        max_retries = 3  # Max retries for sudo password
-        retries = 0
 
         try:
-            child = pexpect.spawn(f"sudo passwd {username}", timeout=60)
-
-            while retries <= max_retries:
-                index = child.expect(
-                    [
-                        r"\[sudo\] password for .*:",
-                        "New password:",
-                        pexpect.EOF,
-                        pexpect.TIMEOUT,
-                    ]
-                )
-                if index == 0:  # Sudo password prompt
-                    if retries == max_retries:
-                        raise RuntimeError("Maximum sudo password retries exceeded.")
-                    child.sendline(getpass.getpass("Enter your sudo password: "))
-                    retries += 1
-                elif index == 1:  # New password prompt
-                    break
-                else:  # EOF or TIMEOUT
-                    raise RuntimeError("Unexpected termination or timeout.")
-
-            child.sendline(password)
-            child.expect("Retype new password:")
-            child.sendline(password)
-            child.expect(pexpect.EOF)
+            sh.sudo.passwd(
+                username,
+                _in=f"{password}\n{password}\n",
+                _err_to_out=True,
+            )
             print("Password successfully changed.")
             return password
-
-        except (pexpect.exceptions.TIMEOUT, pexpect.exceptions.EOF) as e:
-            raise RuntimeError("Error during password change.") from e
+        except sh.ErrorReturnCode as e:
+            raise RuntimeError("Error changing password.") from e
 
     @classmethod
     async def remove_ssh_auth_keys(cls, username) -> tuple[bool, str]:
         """
         Remove SSH authorized keys for a system user.
-
         Args:
             username (str): The username of the user.
-
         Returns:
             tuple: (bool, str) A tuple containing a success flag and a message.
         """
         try:
-            subprocess.run(
-                ["sudo", "rm", f"/home/{username}/.ssh/authorized_keys"], check=True
-            )
-        except subprocess.CalledProcessError:
+            sh.sudo.rm(f"/home/{username}/.ssh/authorized_keys")
+        except sh.ErrorReturnCode:
             return False, f"No authorized keys found for user {username}."
         return True, f"Authorized keys removed for user {username}."
 
