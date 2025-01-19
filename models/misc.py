@@ -324,17 +324,13 @@ class SystemUserManager:
     @classmethod
     async def get_running_users(cls):
         """
-        Retrieve a list of currently logged-in users.
+        Retrieve a list of currently logged-in users using the `sh` module.
 
         Returns:
             str: Output of the `w` command showing logged-in users.
         """
-        connected_users = await asyncio.create_subprocess_shell(
-            "w", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-        )
-        stdout, _ = await connected_users.communicate()
-        connected_users = stdout.decode()
-        return connected_users
+        output = await asyncio.to_thread(sh.w)
+        return output
 
     @classmethod
     async def run_command(cls, command):
@@ -347,10 +343,8 @@ class SystemUserManager:
         Returns:
             str: The output of the command.
         """
-        process = await asyncio.create_subprocess_shell(
-            command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
-        stdout, _ = await process.communicate()
-        return stdout.decode()
+        try:
+            output = await asyncio.to_thread(sh.bash, "-c", command)
+        except sh.ErrorReturnCode as e:
+            output = e.stderr.decode()
+        return output
