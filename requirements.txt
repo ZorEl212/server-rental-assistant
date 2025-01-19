@@ -6,7 +6,8 @@ Telethon~=1.38.1
 fpdf~=1.7.2
 tabulate~=0.9.0
 weasyprint~=63.1
-telethon-utils
 Jinja2~=3.1.4
 redis~=5.2.0
 APScheduler~=3.11.0
+pexpect~=4.9.0
+aioredis~=2.0.1
