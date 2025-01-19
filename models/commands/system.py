@@ -450,7 +450,13 @@ class JobManager:
                 await user.update_balance(
                     new_balance, "debit"
                 )  # Update balance with deduction
-                user.last_deduction_time = current_time
+                user.last_deduction_time = int(
+                    datetime.now()
+                    .replace(
+                        hour=self.DEDUCTION_HOUR, minute=0, second=0, microsecond=0
+                    )
+                    .timestamp()
+                )
                 storage.save()
 
                 # Respond to the user or log the deduction (optional)
