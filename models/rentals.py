@@ -79,6 +79,7 @@ class Rental(BaseModel, Base):
         if new_expiry_time < int(time.time()) and action == "reduced":
             return
         self.end_time = new_expiry_time
+        self.plan_duration += duration_change_seconds
 
     async def extend_plan(self, additional_seconds):
         """
