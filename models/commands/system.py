@@ -426,49 +426,59 @@ class JobManager:
             await client.send_message(ADMIN_ID, f"🔑 {removal_str}")
 
             rental.is_expired = 1
-            rental.is_active = 0
         storage.save()
 
     async def deduct_daily_rental(self):
         """
         Deducts rental charges from user balances on a daily basis.
         """
-        # Get all active rentals
-        active_rentals = storage.all(
-            "Rental", filters={"is_active": 1, "is_expired": 0}
-        )
+        try:
+            active_rentals = storage.all(
+                "Rental", filters={"is_active": 1, "is_expired": 0}
+            )
+            current_time = int(time.time())  # Current time in Unix timestamp
+            day_in_seconds = 86400
 
-        current_time = int(time.time())  # Get current time in Unix timestamp
+            for rental in active_rentals.values():
+                user = rental.user
 
-        for rental in active_rentals.values():
-            # Ensure the user has enough balance to cover the deduction
-            user = rental.user  # Assuming a relationship exists between Rental and User
-            full_day = (current_time - user.last_deduction_time) // 86400  # days
-            total_deduction = full_day * rental.price_rate
-            if full_day >= 1 and user.balance >= total_deduction:
-                new_balance = user.balance - total_deduction
-                await user.update_balance(
-                    new_balance, "debit"
-                )  # Update balance with deduction
-                user.last_deduction_time = int(
-                    datetime.now()
-                    .replace(
-                        hour=self.DEDUCTION_HOUR, minute=0, second=0, microsecond=0
+                days_elapsed = (
+                    current_time - user.last_deduction_time
+                ) // day_in_seconds
+                if days_elapsed < 1:
+                    continue
+
+                total_deduction = days_elapsed * rental.price_rate
+
+                if user.balance >= total_deduction:
+                    new_balance = user.balance - total_deduction
+                    await user.update_balance(new_balance, "debit")
+
+                    deduction_time = (
+                        datetime.now()
+                        .replace(
+                            hour=self.DEDUCTION_HOUR, minute=0, second=0, microsecond=0
+                        )
+                        .timestamp()
                     )
-                    .timestamp()
-                )
-                storage.save()
+                    user.last_deduction_time = int(deduction_time)
+                    storage.save()
 
-                # Respond to the user or log the deduction (optional)
-                print(
-                    f"Deducted {total_deduction} {rental.currency} from {user.linux_username}'s balance."
-                )
-            else:
-                # Handle case when balance is insufficient
-                print(
-                    f"Insufficient balance for {user.linux_username} to deduct rental fee."
-                    f" Balance: {user.balance}, Deduction: {total_deduction}"
-                )
+                    # Log the successful deduction
+                    print(
+                        f"Deducted {total_deduction} {rental.currency} "
+                        f"from {user.linux_username}'s balance. "
+                        f"New balance: {new_balance}."
+                    )
+                else:
+                    # Insufficient balance case
+                    print(
+                        f"Insufficient balance for {user.linux_username} to deduct rental fee. "
+                        f"Balance: {user.balance}, Required: {total_deduction}."
+                    )
+        except Exception as e:
+            # General error handling
+            print(f"Error during daily rental deduction: {e}")
 
     def schedule_rental_expiration(self, rental):
         """
