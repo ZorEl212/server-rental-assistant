@@ -79,7 +79,7 @@ class PaymentRoutes:
 
         currency = args[3]
 
-        user: User = storage.query_object("User", linux_username=username)
+        user: User = storage.query_object("User", linux_username=username, deleted=0)
         if not user:
             await event.respond(f"❌ User `{username}` not found.")
             return
@@ -122,7 +122,7 @@ class PaymentRoutes:
         amount = float(args[2])
         currency = args[3]
 
-        user = storage.query_object("User", linux_username=username)
+        user = storage.query_object("User", linux_username=username, deleted=0)
         if not user:
             await event.respond(f"❌ User `{username}` not found.")
             return

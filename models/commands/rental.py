@@ -46,7 +46,7 @@ class PlanRoutes:
             )
             await event.respond(response)
         else:
-            user = storage.query_object("User", linux_username=username)
+            user = storage.query_object("User", linux_username=username, deleted=0)
             if not user:
                 await event.respond(f"❌ User `{username}` not found.")
                 return
@@ -129,7 +129,7 @@ class PlanRoutes:
             )
             return
 
-        user = storage.query_object("User", linux_username=username)
+        user = storage.query_object("User", linux_username=username, deleted=0)
         if not user:
             await event.respond(f"❌ User `{username}` not found.")
             return
@@ -196,7 +196,8 @@ class PlanRoutes:
         prev_msg = (
             f"⚠️ Plan for user `{username}` has expired. Please take necessary action."
         )
-        rental = storage.query_object("Rental", user_id=username, is_expired=0)
+        user = storage.query_object("User", linux_username=username, deleted=0)
+        rental = storage.query_object("Rental", user_id=user.id, is_expired=0)
         if rental:
             rental.is_expired = 1
             storage.save()

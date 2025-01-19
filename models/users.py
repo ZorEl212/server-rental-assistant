@@ -20,10 +20,11 @@ class User(BaseModel, Base):
     __tablename__ = "users"
 
     uuid = Column(Text, unique=True, default=None)
-    linux_username = Column(Text, unique=True, nullable=False)
+    linux_username = Column(Text, nullable=False)
     linux_password = Column(Text, nullable=False)
     balance = Column(Integer, default=0)
     last_deduction_time = Column(Integer, default=time.time())
+    deleted = Column(Integer, default=0)
 
     # Relationships
     telegram_user = relationship(

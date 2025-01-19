@@ -106,7 +106,7 @@
                     <td>{{ row.username }}</td>
                     <td>{{ row.creation_ist }}</td>
                     <td>{{ row.expiry_ist }}</td>
-                    <td class="{{ 'expired' if row.is_expired else 'active' }}">{{ 'Expired' if row.is_expired else
+                    <td class="{{ 'expired' if not row.is_active else 'active' }}">{{ 'Expired' if not row.is_active else
                         'Active' }}</td>
                     <td>{{ row.payment_count }}</td>
                     <td>{{ row.total_payment }} {{ row.currency if row.currency else '' }}</td>

@@ -47,7 +47,7 @@ class UserRoutes:
         amount = args[3]
         currency = args[4].upper()
 
-        user = storage.query_object("User", linux_username=username)
+        user = storage.query_object("User", linux_username=username, deleted=0)
         if SystemUserManager.is_user_exists(username) or user:
             await event.respond(f"❌ User `{username}` already exists.")
             return
@@ -57,7 +57,10 @@ class UserRoutes:
         user_uuid = str(uuid.uuid4())
 
         user = User(
-            linux_username=username, linux_password=password, uuid=user_uuid, balance=0
+            linux_username=username,
+            linux_password=password,
+            uuid=user_uuid,
+            balance=0,
         )
         try:
             payment = await Payment.create(
@@ -65,7 +68,7 @@ class UserRoutes:
             )
             print(payment.amount)
             await user.update_balance(payment.amount, "credit")
-            SystemUserManager.create_user(username, password)
+            await SystemUserManager.create_user(username, password)
             payment.save()
             user.save()
         except Exception as e:
@@ -141,7 +144,7 @@ class UserRoutes:
         username = command_parts[1]
 
         # Check if the user exists in the database and system
-        user_in_db = storage.query_object("User", linux_username=username)
+        user_in_db = storage.query_object("User", linux_username=username, deleted=0)
         user_in_system = SystemUserManager.is_user_exists(username)
 
         if not user_in_db:
@@ -164,7 +167,12 @@ class UserRoutes:
         # If user exists in both the database and the system, proceed with deletion
         if await SystemUserManager.delete_system_user(username):
             rental.is_active = 0
+            user_in_db.deleted = 1
             storage.save()
+            from models import job_manager
+
+            await job_manager.remove_job_from_redis(f"expire_rental_{rental.id}")
+            await job_manager.remove_job_from_redis(f"notify_rental_{rental.id}")
             await event.respond(f"🗑️ User `{username}` deleted successfully.")
         else:
             await event.respond(f"❌ Error deleting user `{username}`.")
@@ -177,9 +185,13 @@ class UserRoutes:
         :param event: Event object.
         """
 
-        users = storage.join("User", ["Rental", "TelegramUser"], outer=True)
+        users = storage.join(
+            "User", ["Rental", "TelegramUser"], filters={"deleted": 0}, outer=True
+        )
         active_users = [
-            user for user in users if user.rentals and user.rentals[0].is_active
+            user
+            for user in users
+            if user.rentals and 1 in [rental.is_active for rental in user.rentals]
         ]
         if not active_users:
             await event.respond("🔍 No users found.")
@@ -233,7 +245,8 @@ class UserRoutes:
                         f"   Plan: {Utilities.parse_duration_to_human_readable(rental.plan_duration)}\n"
                         f"   Expiry Date: `{expiry_date_str}`\n"
                         f"   Remaining Time: `{remaining_time_str}`\n"
-                        f"   Status: `Active`\n\n"
+                        f"   Status: `Active`\n"
+                        f"   Balance: `{user.balance:.2f}`\n\n"
                     )
             else:
                 response += f"❌ Username: `{user.linux_username}` (No rental information available)\n\n"
@@ -254,7 +267,7 @@ class UserRoutes:
             return
 
         username = event.message.text.split()[1]
-        user = storage.query_object(User, linux_username=username)
+        user = storage.query_object(User, linux_username=username, deleted=0)
         if not user:
             await event.respond(f"❌ No user found for username:`{username}`.")
             return
@@ -289,7 +302,7 @@ class UserRoutes:
         bot_username = await client.get_me()
 
         username = event.message.text.split()[1]
-        user = storage.query_object(User, linux_username=username)
+        user = storage.query_object(User, linux_username=username, deleted=0)
 
         if not user:
             await event.respond(f"❌ User `{username}` not found.")

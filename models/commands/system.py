@@ -77,7 +77,7 @@ class SystemRoutes:
                     int(user.created_at.timestamp())
                 ),
                 "expiry_ist": Utilities.get_date_str(user.rentals[0].end_time),
-                "is_expired": user.rentals[0].is_expired,
+                "is_active": user.rentals[0].is_active,
                 "total_payment": f"{sum([payment.amount for payment in user.payments]):.2f}",
                 "currency": user.payments[0].currency,
                 "payment_count": len(user.payments),
@@ -188,7 +188,7 @@ class SystemRoutes:
             return
 
         user_uuid = event.message.text.split()[1]
-        user = storage.query_object("User", uuid=user_uuid)
+        user = storage.query_object("User", uuid=user_uuid, deleted=0)
 
         if not user:
             await event.respond("❌ Invalid or expired link.")
@@ -258,7 +258,7 @@ class SystemRoutes:
         """
 
         username = event.data.decode().split()[1]
-        user = storage.query_object("User", linux_username=username)
+        user = storage.query_object("User", linux_username=username, deleted=0)
         rental = storage.query_object("Rental", user_id=user.id)
         if not rental:
             await event.edit(
