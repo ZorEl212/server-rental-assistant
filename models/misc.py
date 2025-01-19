@@ -209,7 +209,7 @@ class SystemUserManager:
     """
 
     @staticmethod
-    def create_user(username, password):
+    async def create_user(username, password):
         """
         Create a new system user with the specified username and password.
 
@@ -221,12 +221,11 @@ class SystemUserManager:
             sh.ErrorReturnCode: If user creation fails.
         """
         try:
-            # Create the system user interactively using `adduser`
-            sh.sudo.adduser(username, "--gecos", "''", "--disabled-password")
+            await asyncio.to_thread(
+                sh.sudo.adduser, username, "--gecos", "''", "--disabled-password"
+            )
 
-            # Set the user's password
-            sh.sudo.chpasswd(_in=f"{username}:{password}")
-
+            await asyncio.to_thread(sh.sudo.chpasswd, _in=f"{username}:{password}")
             print(f"System user {username} created successfully.")
         except sh.ErrorReturnCode as e:
             print(f"Error creating user {username}: {e.stderr.decode()}")
@@ -244,14 +243,13 @@ class SystemUserManager:
             bool: True if the user was deleted successfully, False otherwise.
         """
         try:
-            sh.contrib.sudo.pkill(
-                "-9", "-u", username, _ok_code=[0, 1]
-            )  # Allow exit codes 0 (success) and 1 (no processes found)
+            await asyncio.to_thread(
+                sh.sudo.pkill, "-9", "-u", username, _ok_code=[0, 1]
+            )  # Allow exit code 1 (no processes found)
 
-            sh.contrib.sudo.userdel(
-                "-r", username, _ok_code=[0, 12]
+            await asyncio.to_thread(
+                sh.sudo.userdel, "-r", username, _ok_code=[0, 12]
             )  # Allow exit code 12 (mail spool (/var/mail/[username]) not found)
-
             return True
         except sh.ErrorReturnCode as e:
             print(f"Error deleting user {username}: {e.stderr.decode()}")
@@ -272,7 +270,8 @@ class SystemUserManager:
         password = Utilities.generate_password()
 
         try:
-            sh.sudo.passwd(
+            await asyncio.to_thread(
+                sh.sudo.passwd,
                 username,
                 _in=f"{password}\n{password}\n",
                 _err_to_out=True,
@@ -292,7 +291,9 @@ class SystemUserManager:
             tuple: (bool, str) A tuple containing a success flag and a message.
         """
         try:
-            sh.sudo.rm(f"/home/{username}/.ssh/authorized_keys")
+            await asyncio.to_thread(
+                sh.sudo.rm, f"/home/{username}/.ssh/authorized_keys"
+            )
         except sh.ErrorReturnCode:
             return False, f"No authorized keys found for user {username}."
         return True, f"Authorized keys removed for user {username}."
