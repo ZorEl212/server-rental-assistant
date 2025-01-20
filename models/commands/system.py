@@ -272,6 +272,7 @@ class SystemRoutes:
             f"✅ User `{username}` plan updated in the database. Status: `{status}`."
         )
 
+    @Auth.authorized_user
     async def run_command(self, event):
         """
         A handler for the /run command. This command is used to run commands on the server.
