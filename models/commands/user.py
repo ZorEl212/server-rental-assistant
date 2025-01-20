@@ -173,6 +173,8 @@ class UserRoutes:
 
             await job_manager.remove_job_from_redis(f"expire_rental_{rental.id}")
             await job_manager.remove_job_from_redis(f"notify_rental_{rental.id}")
+            tg_user = storage.query_object("TelegramUser", user_id=user_in_db.id)
+            tg_user.delete()
             await event.respond(f"🗑️ User `{username}` deleted successfully.")
         else:
             await event.respond(f"❌ Error deleting user `{username}`.")
