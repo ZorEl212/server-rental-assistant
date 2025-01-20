@@ -13,9 +13,8 @@ class TelegramUser(BaseModel, Base):
 
     tg_user_id = Column(
         Integer,
-        unique=True,
         nullable=False,
-        doc="Unique identifier for the Telegram user.",
+        doc="Telegram ID of the account.",
     )
     user_id = Column(
         String,
