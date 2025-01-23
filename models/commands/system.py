@@ -581,7 +581,7 @@ class JobManager:
             user = rental.user
             tg_user = rental.telegram_user
             remaining_time = datetime.fromtimestamp(rental.end_time) - datetime.now()
-            admin, user = await asyncio.gather(
+            admin, telegram_user = await asyncio.gather(
                 client.get_entity(PeerUser(ADMIN_ID)),
                 client.get_entity(
                     PeerUser(user.telegram_id),
@@ -594,7 +594,7 @@ class JobManager:
                 f"{(remaining_time.seconds // 60) % 60} minutes"
             )
             message = (
-                f"⏰ [{tg_user.tg_first_name}](https://t.me/{user.username}) Your plan for user `{user.linux_username}` "
+                f"⏰ {telegram_user.first_name}, Your plan for user `{user.linux_username}` "
                 f"will expire in {remaining_time_str}."
                 "\n\nPlease contact the admin if you want to extend the plan. 🔄"
                 "\nYour data will be deleted after the expiry time. 🗑️"
