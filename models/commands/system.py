@@ -337,6 +337,20 @@ class JobManager:
         await self.redis_conn.hdel("jobs", job_id)
         print(f"Job {job_id} removed from Redis.")
 
+    async def remove_notification_jobs(self, rental_id):
+        """
+        Remove notification jobs for a rental plan.
+        :param rental_id: The ID of the rental plan.
+        :return: None
+        """
+
+        notification_jobs = [
+            f"notify_rental_12hrs_{rental_id}",
+            f"notify_rental_2hrs_{rental_id}",
+        ]
+        for job_id in notification_jobs:
+            await self.remove_job_from_redis(job_id)
+
     async def load_jobs_from_redis(self, job_data):
         """
         Load jobs from Redis and schedule them using the scheduler.
@@ -502,48 +516,48 @@ class JobManager:
         )
         print(f"Scheduled expiration job for rental {rental.id} at {expiration_time}")
 
-    def schedule_notification_job(self, rental):
+    async def schedule_notification_job(self, rental):
         """
-        Schedule a notification job for a rental plan. The notification will be sent 24 hours before the plan expires.
-        This should be called when a new rental plan is created otherwise it is used as a helper method to schedule
-        notification jobs for all active rentals.
-        With a tolerance window of 12 hours, the notification will be sent immediately if the time is within the window.
+        Schedule two notification jobs for a rental plan:
+        1. 12 hours before the plan's expiration.
+        2. 2 hours before the plan's expiration.
         :param rental: The rental plan object.
         :return: None
         """
 
-        # Calculate notification time (24 hours before expiration)
-        notification_time = datetime.fromtimestamp(rental.end_time) - timedelta(
-            hours=24
-        )
-        job_id = f"notify_rental_{rental.id}"
+        start_time = datetime.fromtimestamp(rental.start_time)
+        end_time = datetime.fromtimestamp(rental.end_time)
 
-        # Check if the notification time is more than 12 hours from now
-        tolerance_window = timedelta(hours=12)
-        time_remaining = notification_time - datetime.now()
+        # Notification 12 hours before expiration
+        notification_time_12hrs = end_time - timedelta(hours=12)
+        job_id_12hrs = f"notify_rental_12hrs_{rental.id}"
 
-        if time_remaining <= timedelta(0):  # Notification time has already passed
-            print(
-                f"Skipping notification job for rental {rental.id} as the time has already passed."
-            )
-            return
-        elif time_remaining <= tolerance_window:
-            print(
-                f"Notification job for rental {rental.id} is within the tolerance window."
-            )
-            # Send the notification immediately
-            asyncio.create_task(self.notify_rental(rental.id))
-        else:
-            # Schedule the notification job
+        if notification_time_12hrs > datetime.now():
             self.add_job(
                 self.notify_rental,
-                trigger=DateTrigger(run_date=notification_time),
-                job_id=job_id,
+                trigger=DateTrigger(run_date=notification_time_12hrs),
+                job_id=job_id_12hrs,
                 args=[rental.id],
                 replace_existing=True,
             )
             print(
-                f"Scheduled notification job for rental {rental.id} at {notification_time}"
+                f"Scheduled 12-hour notification for rental {rental.id} at {notification_time_12hrs}"
+            )
+
+        # Notification 2 hours before expiration
+        notification_time_2hrs = end_time - timedelta(hours=2)
+        job_id_2hrs = f"notify_rental_2hrs_{rental.id}"
+
+        if notification_time_2hrs > datetime.now():
+            self.add_job(
+                self.notify_rental,
+                trigger=DateTrigger(run_date=notification_time_2hrs),
+                job_id=job_id_2hrs,
+                args=[rental.id],
+                replace_existing=True,
+            )
+            print(
+                f"Scheduled 2-hour notification for rental {rental.id} at {notification_time_2hrs}"
             )
 
     async def schedule_all_notifications(self):
@@ -560,7 +574,7 @@ class JobManager:
             outer=True,
         )
         for rental in rentals if rentals else []:
-            self.schedule_notification_job(rental)
+            await self.schedule_notification_job(rental)
 
     async def notify_rental(self, rental_id):
         """

@@ -172,7 +172,7 @@ class UserRoutes:
             from models import job_manager
 
             await job_manager.remove_job_from_redis(f"expire_rental_{rental.id}")
-            await job_manager.remove_job_from_redis(f"notify_rental_{rental.id}")
+            await job_manager.remove_notification_jobs(rental.id)
             await event.respond(f"🗑️ User `{username}` deleted successfully.")
         else:
             await event.respond(f"❌ Error deleting user `{username}`.")
