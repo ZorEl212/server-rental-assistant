@@ -1,9 +1,11 @@
+import html
 import time
 import uuid
 from datetime import datetime
 
 import pytz
 from telethon import Button
+from telethon.tl.types import PeerUser
 
 from models import client, storage
 from models.misc import Auth, SystemUserManager, Utilities
@@ -114,7 +116,7 @@ class UserRoutes:
         )
         from models import job_manager
 
-        job_manager.schedule_notification_job(rental)
+        await job_manager.schedule_notification_job(rental)
         job_manager.schedule_rental_expiration(rental)
         message_str = (
             f"🔐 **Username:** `{username}`\n"
@@ -208,23 +210,28 @@ class UserRoutes:
                 expiry_date_ist = datetime.fromtimestamp(rental.end_time, ist)
                 expiry_date_str = Utilities.get_date_str(rental.end_time)
                 now = datetime.now(pytz.utc).astimezone(ist)
+                tg_user = (
+                    await client.get_entity(PeerUser(user_id=telegram_user.tg_user_id))
+                    if telegram_user
+                    else None
+                )
+
+                tg_tag = (
+                    f'<a href="https://t.me/{html.escape(tg_user.username)}">'
+                    f"{html.escape(tg_user.first_name)}</a>"
+                    if telegram_user
+                    else "Not set"
+                )
 
                 if rental.is_expired or not rental.is_active:
                     elapsed_time = now - expiry_date_ist
                     elapsed_time_str = f"{elapsed_time.days} days, {elapsed_time.seconds // 3600} hours, {(elapsed_time.seconds // 60) % 60} minutes"
 
-                    tg_tag = (
-                        f"[{telegram_user.tg_first_name}](tg://user?id={telegram_user.tg_user_id})"
-                        if telegram_user
-                        else "Not set"
-                    )
-
                     response += (
-                        f"❌ Username: `{user.linux_username}`\n"
-                        f"   Telegram: {tg_tag}\n"
-                        f"   Expiry Date: `{expiry_date_str}`\n"
-                        f"   Elapsed Time: `{elapsed_time_str}`\n"
-                        f"   Status: `Expired`\n\n"
+                        f"<p>❌ <strong>Username:</strong> <code>{html.escape(user.linux_username)}</code><br>"
+                        f"   <strong>Telegram:</strong> {tg_tag}<br>"
+                        f"   <strong>Expiry Date:</strong> <code>{html.escape(expiry_date_str)}</code><br>"
+                        f"   <strong>Elapsed Time:</strong> <code>{html.escape(elapsed_time_str)}</code><br>"
                     )
                 else:
                     remaining_time = expiry_date_ist - now
@@ -233,25 +240,23 @@ class UserRoutes:
                         f"{(remaining_time.seconds // 60) % 60} minutes"
                     )
 
-                    tg_tag = (
-                        f"[{telegram_user.tg_first_name}](tg://user?id={telegram_user.tg_user_id})"
-                        if telegram_user
-                        else "Not set"
-                    )
-
                     response += (
-                        f"✨ Username: `{user.linux_username}`\n"
-                        f"   Telegram: {tg_tag}\n"
-                        f"   Plan: {Utilities.parse_duration_to_human_readable(rental.plan_duration)}\n"
-                        f"   Expiry Date: `{expiry_date_str}`\n"
-                        f"   Remaining Time: `{remaining_time_str}`\n"
-                        f"   Status: `Active`\n"
-                        f"   Balance: `{user.balance:.2f}`\n\n"
+                        f"<p>✨ <strong>Username:</strong> <code>{html.escape(user.linux_username)}</code>\n"
+                        f"   <strong>Telegram:</strong> {tg_tag}\n"
+                        f"   <strong>Plan:</strong> {html.escape(Utilities.parse_duration_to_human_readable(rental.plan_duration))}\n"
+                        f"   <strong>Expiry Date:</strong> <code>{html.escape(expiry_date_str)}</code>\n"
+                        f"   <strong>Remaining Time:</strong> <code>{html.escape(remaining_time_str)}</code>\n"
+                        f"   <strong>Balance:</strong> <code>{user.balance:.2f}</code><br></p>\n\n"
                     )
             else:
-                response += f"❌ Username: `{user.linux_username}` (No rental information available)\n\n"
-
-        await event.respond(response)
+                response += (
+                    f"<p>❌ <strong>Username: </strong> "
+                    f"<code>{html.escape(user.linux_username)}</code>"
+                    f"(No rental information available)</p>\n\n"
+                )
+        client.parse_mode = "html"
+        await event.respond(response, link_preview=False)
+        client.parse_mode = "md"
 
     # /clear_user command
     @Auth.authorized_user
