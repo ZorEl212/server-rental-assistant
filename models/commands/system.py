@@ -12,6 +12,7 @@ from apscheduler.triggers.date import DateTrigger
 from apscheduler.triggers.cron import CronTrigger
 from jinja2 import Environment, FileSystemLoader
 from telethon import Button
+from telethon.tl.types import PeerUser
 from weasyprint import HTML
 
 from models import client, storage
@@ -592,20 +593,30 @@ class JobManager:
             user = rental.user
             tg_user = rental.telegram_user
             remaining_time = datetime.fromtimestamp(rental.end_time) - datetime.now()
+            admin, user = await asyncio.gather(
+                client.get_entity(PeerUser(ADMIN_ID)),
+                client.get_entity(
+                    PeerUser(user.telegram_id),
+                ),
+                return_exceptions=True,
+            )
             remaining_time_str = (
                 f"{remaining_time.days} days, "
                 f"{remaining_time.seconds // 3600} hours, "
                 f"{(remaining_time.seconds // 60) % 60} minutes"
             )
             message = (
-                f"⏰ [{tg_user.tg_first_name}](tg://user?id={rental.telegram_id}) Your plan for user `{user.linux_username}` "
+                f"⏰ [{tg_user.tg_first_name}](https://t.me/{user.username}) Your plan for user `{user.linux_username}` "
                 f"will expire in {remaining_time_str}."
                 "\n\nPlease contact the admin if you want to extend the plan. 🔄"
                 "\nYour data will be deleted after the expiry time. 🗑️"
             )
 
+            contact_url = f"https://t.me/{admin.username}"
             await client.send_message(
-                tg_user.tg_user_id if tg_user else ADMIN_ID, message
+                tg_user.tg_user_id if tg_user else ADMIN_ID,
+                message,
+                buttons=[[Button.url("Wanna extend", contact_url)]],
             )
             rental.sent_expiry_notification = 1
             storage.save()
