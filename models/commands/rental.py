@@ -71,7 +71,7 @@ class PlanRoutes:
             await rental.reduce_plan(reduced_duration_seconds)
             from models import job_manager
 
-            job_manager.schedule_notification_job(rental)
+            await job_manager.schedule_notification_job(rental)
             job_manager.schedule_rental_expiration(rental)
             await event.respond(
                 f"🔄 User `{username}`'s plan reduced!\n\n"
