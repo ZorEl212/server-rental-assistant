@@ -215,10 +215,15 @@ class UserRoutes:
                     if telegram_user
                     else None
                 )
+                if tg_user and tg_user.username:
+                    tg_url = f"https://t.me/{tg_user.username}"
+                elif telegram_user:
+                    tg_url = f"tg://user?id={telegram_user.tg_user_id}"
+                else:
+                    tg_url = ""
 
                 tg_tag = (
-                    f'<a href="https://t.me/{html.escape(tg_user.username)}">'
-                    f"{html.escape(tg_user.first_name)}</a>"
+                    f'<a href="{tg_url}">{html.escape(tg_user.first_name)}</a>'
                     if telegram_user
                     else "Not set"
                 )
