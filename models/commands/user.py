@@ -259,9 +259,7 @@ class UserRoutes:
                     f"<code>{html.escape(user.linux_username)}</code>"
                     f"(No rental information available)</p>\n\n"
                 )
-        client.parse_mode = "html"
-        await event.respond(response, link_preview=False)
-        client.parse_mode = "md"
+        await event.respond(response, parse_mode="html", link_preview=False)
 
     # /clear_user command
     @Auth.authorized_user
