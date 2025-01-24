@@ -136,8 +136,8 @@ class UserRoutes:
         Args:
             event: The event containing the user command and context. (or a callback query)
         """
-        # Check if it's a callback query
-        if event.data:
+        # Check if event is Message object
+        if not hasattr(event, "message") and hasattr(event, "data"):
             username = event.data.decode().split()[1]
         else:
             # Extract and validate the username from the command
