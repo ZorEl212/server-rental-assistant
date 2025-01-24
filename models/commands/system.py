@@ -139,13 +139,19 @@ class SystemRoutes:
         message = f"📢 **Broadcast Message**\n\n{message}"
 
         rentals = storage.join("Rental", ["TelegramUser"], {"is_active": 1})
-        for rental in rentals:
+        telegram_ids = {
+            rental.telegram_id
+            for rental in rentals
+            if rental.telegram_id and rental.telegram_id
+        }
+        print(telegram_ids)
+        for telegram_id in telegram_ids:
             try:
-                await client.send_message(rental.telegram_id, message)
+                await client.send_message(telegram_id, message)
             except Exception:
                 pass
 
-        await event.respond(f"✅ Broadcasted message to {len(rentals)} user(s).")
+        await event.respond(f"✅ Broadcasted message to {len(telegram_ids)} user(s).")
 
     # /who command
     @Auth.authorized_user
