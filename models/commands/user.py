@@ -138,16 +138,15 @@ class UserRoutes:
         """
         # Check if it's a callback query
         if event.data:
-            await self.handle_delete_user(event)
-            return
+            username = event.data.decode().split()[1]
+        else:
+            # Extract and validate the username from the command
+            command_parts = event.message.text.split()
+            if len(command_parts) < 2:
+                await event.respond("❓ Usage: /delete_user <username>")
+                return
 
-        # Extract and validate the username from the command
-        command_parts = event.message.text.split()
-        if len(command_parts) < 2:
-            await event.respond("❓ Usage: /delete_user <username>")
-            return
-
-        username = command_parts[1]
+            username = command_parts[1]
 
         # Check if the user exists in the database and system
         user_in_db = storage.query_object("User", linux_username=username, deleted=0)
@@ -348,15 +347,3 @@ class UserRoutes:
             ],
         )
 
-    async def handle_delete_user(self, event):
-        """
-        A callback handler for the button to delete a user from the database.
-        :param event: Event object.
-        :return: None
-        """
-        username = event.data.decode().split()[1]
-
-        if await SystemUserManager.delete_system_user(username):
-            await event.respond(f"🗑️ User `{username}` deleted successfully.")
-        else:
-            await event.respond(f"❌ Error deleting user `{username}`.")
