@@ -189,7 +189,7 @@ class Utilities:
     @classmethod
     async def deactivate_expired_rentals(cls):
         now = int(time.time())
-        rentals = storage.join("Rental", ["User"], {"is_expired": 0})
+        rentals = storage.join("Rental", ["User"], {"is_expired": 0, "is_active": 1})
         expired_rentals = [rental for rental in rentals if rental.end_time < now]
         for rental in expired_rentals:
             print(f"Deactivating rental for user {rental.user.linux_username}")
