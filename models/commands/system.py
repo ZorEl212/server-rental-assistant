@@ -584,7 +584,7 @@ class JobManager:
             admin, telegram_user = await asyncio.gather(
                 client.get_entity(PeerUser(ADMIN_ID)),
                 client.get_entity(
-                    PeerUser(user.telegram_id),
+                    PeerUser(tg_user.tg_user_id),
                 ),
                 return_exceptions=True,
             )
