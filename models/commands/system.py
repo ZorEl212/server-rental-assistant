@@ -239,7 +239,7 @@ class SystemRoutes:
         )
         await event.respond(response_msg, parse_mode="html", link_preview=False)
 
-        admin_msg = f"🔑 Password sent to user {user_tag}."
+        admin_msg = f"🔑 Password sent to user {user_tag} bearing linux username: <code>{username}</code>"
         await client.send_message(
             ADMIN_ID, admin_msg, parse_mode="html", link_preview=False
         )
