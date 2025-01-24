@@ -279,7 +279,8 @@ class SystemUserManager:
             print("Password successfully changed.")
             return password
         except sh.ErrorReturnCode as e:
-            raise RuntimeError("Error changing password.") from e
+            print(f"Error changing password: {e.stderr.decode()}")
+            return None
 
     @classmethod
     async def remove_ssh_auth_keys(cls, username) -> tuple[bool, str]:
