@@ -223,7 +223,7 @@ class SystemRoutes:
                 tg_last_name=last_name,
             )
             storage.new(tg_user)
-            rental.telegram_id = tg_user_id
+            rental.telegram_id = tg_user.id
             storage.save()
 
         user_url = (
@@ -423,7 +423,9 @@ class JobManager:
 
         if rental:
             user = rental.user
-            telegram_id = rental.telegram_id
+            telegram_id = (
+                rental.telegram_user.tg_user_id if rental.telegram_user else None
+            )
 
             tg_user = await client.get_entity(telegram_id)
 

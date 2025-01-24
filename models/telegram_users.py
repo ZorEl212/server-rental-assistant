@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, Text
+from sqlalchemy import BigInteger, Column, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from models.baseModel import Base, BaseModel
@@ -12,7 +12,7 @@ class TelegramUser(BaseModel, Base):
     __tablename__ = "telegram_users"
 
     tg_user_id = Column(
-        Integer,
+        BigInteger,
         nullable=False,
         doc="Telegram ID of the account.",
     )

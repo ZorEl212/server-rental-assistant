@@ -71,8 +71,8 @@ class UserRoutes:
             print(payment.amount)
             await user.update_balance(payment.amount, "credit")
             await SystemUserManager.create_user(username, password)
-            payment.save()
             user.save()
+            payment.save()
         except Exception as e:
             await event.respond(f"❌ Error creating user `{username}`: {e}")
             return

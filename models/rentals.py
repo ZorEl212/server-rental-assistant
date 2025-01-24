@@ -35,9 +35,9 @@ class Rental(BaseModel, Base):
     __tablename__ = "rentals"
 
     user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    telegram_id = Column(
-        Integer,
-        ForeignKey("telegram_users.tg_user_id", ondelete="SET NULL"),
+    telegram_account = Column(
+        String,
+        ForeignKey("telegram_users.id", ondelete="SET NULL"),
         default=None,
     )
     start_time = Column(Integer, nullable=False)
