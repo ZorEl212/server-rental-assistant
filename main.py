@@ -8,6 +8,11 @@ async def main():
     await job_manager.init_redis()
     await bot.start()
 
+# Check if redis is running
+if not Utilities.check_redis():
+    print("\033[91mRedis is not running. Exiting...\033[0m")
+    exit()
+
 
 event_loop = asyncio.get_event_loop()
 event_loop.create_task(job_manager.schedule_jobs())
