@@ -5,4 +5,5 @@ env/
 *.db
 notes.txt
 docs/*
+venv
 *.session-journal
