@@ -402,7 +402,10 @@ class JobManager:
             user = rental.user
             telegram_id = rental.telegram_id
 
+            tg_user = await client.get_entity(telegram_id)
+
             message = (
+                f"Hey {tg_user.first_name}!\n\n"
                 f"❌ Your plan for the user: `{user.linux_username}` has been expired."
                 f"\n\nThanks for using our service. 🙏"
                 f"\nFeel free to contact the admin for any queries. 📞"
