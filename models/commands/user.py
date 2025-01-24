@@ -134,8 +134,12 @@ class UserRoutes:
         A handler for /delete_user command to delete a user from the system or database.
 
         Args:
-            event: The event containing the user command and context.
+            event: The event containing the user command and context. (or a callback query)
         """
+        # Check if it's a callback query
+        if event.data:
+            await self.handle_delete_user(event)
+            return
 
         # Extract and validate the username from the command
         command_parts = event.message.text.split()

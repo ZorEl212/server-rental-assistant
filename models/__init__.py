@@ -106,6 +106,7 @@ callbacks = {
     "cancel": plan_routes.handle_cancel,
     "clean_db": system_routes.handle_clean_db,
     "refresh_connected_users": system_routes.refresh_connected_users,
+    "delete_user": user_routes.delete_user_command, # Callback for deleting a user
 }
 
 # Initialize the BotManager with client, routes, and callbacks
