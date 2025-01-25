@@ -99,6 +99,7 @@ routes = {
     "/credit": payment_routes.credit_payment,
     "/debit": payment_routes.debit_payment,
     "/run": system_routes.run_command,
+    "/check_disk": system_routes.check_disk_usage,
 }
 
 # Define callback mappings for inline keyboard actions

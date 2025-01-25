@@ -268,7 +268,7 @@ class SystemRoutes:
         )
 
     @Auth.authorized_user
-    async def run_command(self, event):
+    async def run_command(self, event, command=None):
         """
         A handler for the /run command. This command is used to run commands on the server.
         :param event: Event object.
@@ -282,6 +282,29 @@ class SystemRoutes:
         output = await SystemUserManager.run_command(command)
         await event.respond(f"```\n{output}\n```")
 
+    @classmethod
+    async def check_disk_usage(cls, event):
+        """
+        Check the disk usage of the system.
+
+        Returns:
+            str: The output of the `df` command.
+        """
+        command = "sudo du -s /home/* 2>/dev/null | awk -F'/' '{user = $NF; size[$NF] = $1} END {for (user in size) printf \"%s %.2f\\n\", user, size[user] / 1024 / 1024}'"
+        await event.respond("🔄 Checking disk usage...")
+        output = await SystemUserManager.run_command(command)
+
+        # Parse into the dictionary
+        disk_usage = {}
+        for line in output.split("\n"):
+            if line:
+                user, size = line.split()
+                disk_usage[user] = float(size)
+        print(disk_usage)
+        await event.respond(
+            f"```\n{output}\n```",
+        )
+        
 
 class JobManager:
     """
