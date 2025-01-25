@@ -22,7 +22,26 @@ class PaymentRoutes:
 
         all_payments = storage.all("Payment")
         total_earnings = sum(payment.amount for payment in all_payments.values())
-        await event.respond(f"💰 **Total Earnings:** `{total_earnings:.2f} INR`")
+
+        # Calculate statistics
+        if all_payments:
+            first_payment = min(
+                payment.payment_date for payment in all_payments.values()
+            )
+            first_payment_date = Utilities.get_date_str(first_payment)
+        else:
+            first_payment_date = "N/A"
+
+        # Format response message
+        message = (
+            f"💰 **Total Earnings:** `{total_earnings:,.2f} INR`\n"
+            f"📅 **First Payment Date:** `{first_payment_date}`"
+            f"\n\n📊 **Payment Statistics:**\n"
+            f"📈 **Total Payments:** `{len(all_payments)}`\n"
+            # TODO: More to go here
+        )
+
+        await event.respond(message)
 
     @Auth.authorized_user
     async def payment_history(self, event):
