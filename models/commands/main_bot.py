@@ -38,7 +38,12 @@ class BotManager:
         self.__client.add_event_handler(
             self.callback_handler, events.CallbackQuery(pattern=re.compile(r".*"))
         )
-        print("Bot is running...")
+
+        # Get bot details
+        me = await self.__client.get_me()
+        print(
+            f"Bot details: {me.first_name}, @{me.username}, ID: {me.id}, Bot is running..."
+        )
         await self.__client.run_until_disconnected()
 
     @property

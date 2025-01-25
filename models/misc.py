@@ -200,7 +200,7 @@ class Utilities:
             await SystemUserManager.remove_ssh_auth_keys(rental.user.linux_username)
             rental.user.linux_password = password
             storage.save()
-    
+
     def check_redis():
         try:
             sh.redis_cli.ping()
