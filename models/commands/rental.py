@@ -157,7 +157,7 @@ class PlanRoutes:
             payment.save()
             from models import job_manager
 
-            job_manager.schedule_notification_job(rental)
+            await job_manager.schedule_notification_job(rental)
             job_manager.schedule_rental_expiration(rental)
         except ValueError:
             await event.respond("❌ Invalid amount or currency.")
