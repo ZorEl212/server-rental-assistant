@@ -9,8 +9,8 @@ from datetime import datetime, timedelta
 import redis.asyncio as redis
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.date import DateTrigger
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.date import DateTrigger
 from jinja2 import Environment, FileSystemLoader
 from telethon import Button
 from telethon.tl.types import PeerUser
@@ -304,7 +304,7 @@ class SystemRoutes:
         await event.respond(
             f"```\n{output}\n```",
         )
-        
+
 
 class JobManager:
     """
@@ -614,9 +614,9 @@ class JobManager:
             tg_user = rental.telegram_user
             remaining_time = datetime.fromtimestamp(rental.end_time) - datetime.now()
             admin, telegram_user = await asyncio.gather(
-                client.get_entity(PeerUser(ADMIN_ID)),
-                client.get_entity(
-                    PeerUser(tg_user.tg_user_id),
+                await client.get_entity(PeerUser(ADMIN_ID)),
+                await client.get_entity(
+                    PeerUser(tg_user.telegram_id),
                 ),
                 return_exceptions=True,
             )
