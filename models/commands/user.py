@@ -239,7 +239,7 @@ class UserRoutes:
                         f"<p>❌ <strong>Username:</strong> <code>{html.escape(user.linux_username)}</code><br>\n"
                         f"   <strong>Telegram:</strong> {tg_tag}<br>\n"
                         f"   <strong>Expiry Date:</strong> <code>{html.escape(expiry_date_str)}</code><br>\n"
-                        f"   <strong>Elapsed Time:</strong> <code>{html.escape(elapsed_time_str)}</code><br>\n"
+                        f"   <strong>Elapsed Time:</strong> <code>{html.escape(elapsed_time_str)}</code><br>\n\n"
                     )
                 else:
                     remaining_time = expiry_date_ist - now
@@ -346,4 +346,3 @@ class UserRoutes:
                 )
             ],
         )
-
