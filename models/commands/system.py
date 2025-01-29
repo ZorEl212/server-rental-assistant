@@ -1,9 +1,11 @@
 import asyncio
 import html
 import json
+import os
 import tempfile
 import time
 import traceback
+import urllib.parse
 from datetime import datetime, timedelta
 
 import redis.asyncio as redis
@@ -12,7 +14,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.date import DateTrigger
 from jinja2 import Environment, FileSystemLoader
-from telethon import Button
+from telethon import Button, client
 from telethon.tl.types import PeerUser
 from weasyprint import HTML
 
@@ -633,11 +635,32 @@ class JobManager:
                 "\nYour data will be deleted after the expiry time. 🗑️"
             )
 
+            # Parse an Extend my Plan button
             contact_url = f"https://t.me/{admin.username}"
+
+            # Get current bot details
+            current_bot_id = os.environ["TG_BOT_ID"]
+
+            # Get the bot username
+            bot_entity = await client.get_entity(int(current_bot_id))
+
+            extension_request_msg = f"📢 Hello {admin.username}, \nI would like to extend my current rental plan."
+            extension_request_msg += f"\n\n👤 User: {user.linux_username}"
+            extension_request_msg += (
+                f"\n📅 Expiry Date: {Utilities.get_date_str(rental.end_time)}"
+            )
+            extension_request_msg += f"\n🔗 Referred by: @{bot_entity.username}"
+
+            contact_url += "?text=" + urllib.parse.quote(extension_request_msg)
+
             await client.send_message(
                 tg_user.tg_user_id if tg_user else ADMIN_ID,
                 message,
-                buttons=[[Button.url("Wanna extend", contact_url)]],
+                buttons=[
+                    [
+                        Button.url("🚀 Extend My Plan", contact_url),
+                    ]
+                ],
             )
             rental.sent_expiry_notification = 1
             storage.save()
