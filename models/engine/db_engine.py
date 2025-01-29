@@ -1,12 +1,12 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Query, joinedload, scoped_session, sessionmaker
-from sqlalchemy.sql import or_
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 from models.baseModel import Base
 from models.payments import Payment
 from models.rentals import Rental
 from models.telegram_users import TelegramUser
 from models.users import User
+from resources.constants import DB_STRING
 
 classes = {
     "Rental": Rental,
@@ -26,7 +26,7 @@ class DBStorage:
     __session = None
 
     def __init__(self):
-        self.__engine = create_engine("sqlite:///server-database.db", echo=False)
+        self.__engine = create_engine(DB_STRING, pool_pre_ping=True)
 
     def all(self, cls=None, filters=None):
         """

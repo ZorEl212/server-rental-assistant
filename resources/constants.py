@@ -1,4 +1,5 @@
 import os
+import sys
 
 import dotenv
 
@@ -22,6 +23,10 @@ def check_env():
         # Raise warning if GROUP_ID is not set
         print("Warning: GROUP_ID is not set in .env file. Continuing without it.")
 
+    if not os.getenv("DB_STRING"):
+        print("Error: DB_STRING is not set in .env file. Exiting...")
+        sys.exit(1)
+
 
 dotenv.load_dotenv()
 check_env()
@@ -42,6 +47,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = int(os.getenv("ADMIN_ID"))
 GROUP_ID = int(os.getenv("GROUP_ID", 0))
 EXCHANGE_API_ID = os.getenv("EXCHANGE_API_ID", "")
+DB_STRING = os.getenv("DB_STRING")
 
 ADJECTIVES = [
     "crazy",
