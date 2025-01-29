@@ -1,3 +1,4 @@
+import os
 import re
 from typing import Dict
 
@@ -41,6 +42,10 @@ class BotManager:
 
         # Get bot details
         me = await self.__client.get_me()
+
+        # Set the bot ID as an environment variable
+        os.environ["TG_BOT_ID"] = str(me.id)
+
         print(
             f"Bot details: {me.first_name}, @{me.username}, ID: {me.id}, Bot is running..."
         )
