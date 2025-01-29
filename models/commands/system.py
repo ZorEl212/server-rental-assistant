@@ -559,8 +559,7 @@ class JobManager:
                 total_deduction = days_elapsed * rental.price_rate
 
                 if user.balance >= total_deduction:
-                    new_balance = user.balance - total_deduction
-                    await user.update_balance(new_balance, "debit")
+                    await user.update_balance(-total_deduction, "debit")
 
                     deduction_time = (
                         datetime.now()
@@ -576,7 +575,7 @@ class JobManager:
                     print(
                         f"Deducted {total_deduction} {rental.currency} "
                         f"from {user.linux_username}'s balance. "
-                        f"New balance: {new_balance}."
+                        f"New balance: {user.balance}."
                     )
                 else:
                     # Insufficient balance case
