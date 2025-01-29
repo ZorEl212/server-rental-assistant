@@ -35,7 +35,7 @@ class Rental(BaseModel, Base):
     __tablename__ = "rentals"
 
     user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    telegram_account = Column(
+    telegram_user = Column(
         String,
         ForeignKey("telegram_users.id", ondelete="SET NULL"),
         default=None,
@@ -56,7 +56,7 @@ class Rental(BaseModel, Base):
 
     # Relationships
     user = relationship("User", back_populates="rentals")
-    telegram_user = relationship("TelegramUser")
+    tguser = relationship("TelegramUser")
 
     async def modify_plan_duration(self, duration_change_seconds, action="reduced"):
         """

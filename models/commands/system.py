@@ -139,11 +139,8 @@ class SystemRoutes:
         message = f"📢 **Broadcast Message**\n\n{message}"
 
         rentals = storage.join("Rental", ["TelegramUser"], {"is_active": 1})
-        telegram_ids = {
-            rental.telegram_id
-            for rental in rentals
-            if rental.telegram_id and rental.telegram_id
-        }
+        telegram_ids = {rental.tguser.tg_user_id for rental in rentals if rental.tguser}
+
         print(telegram_ids)
         for telegram_id in telegram_ids:
             try:
@@ -223,7 +220,7 @@ class SystemRoutes:
                 tg_last_name=last_name,
             )
             storage.new(tg_user)
-            rental.telegram_id = tg_user.id
+            rental.telegram_user = tg_user.id
             storage.save()
 
         user_url = (
@@ -423,11 +420,12 @@ class JobManager:
 
         if rental:
             user = rental.user
-            telegram_id = (
-                rental.telegram_user.tg_user_id if rental.telegram_user else None
-            )
+            telegram_id = rental.tguser.tg_user_id if rental.tguser else None
 
-            tg_user = await client.get_entity(telegram_id)
+            if telegram_id:
+                tg_user = await client.get_entity(telegram_id)
+            else:
+                tg_user = None
 
             message = (
                 f"Hey {tg_user.first_name}!\n\n"
@@ -613,12 +611,13 @@ class JobManager:
 
         if rental and not rental.sent_expiry_notification:
             user = rental.user
-            tg_user = rental.telegram_user
+            tg_user = rental.tguser
             remaining_time = datetime.fromtimestamp(rental.end_time) - datetime.now()
+
             admin, telegram_user = await asyncio.gather(
-                await client.get_entity(PeerUser(ADMIN_ID)),
-                await client.get_entity(
-                    PeerUser(tg_user.telegram_id),
+                client.get_entity(PeerUser(ADMIN_ID)),
+                client.get_entity(
+                    PeerUser(tg_user.tg_user_id) if tg_user else None,
                 ),
                 return_exceptions=True,
             )

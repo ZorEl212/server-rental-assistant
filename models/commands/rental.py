@@ -172,13 +172,13 @@ class PlanRoutes:
         )
 
         if rental.telegram_user:
-            tg_user = await client.get_entity(rental.telegram_user.tg_user_id)
+            tg_user = await client.get_entity(rental.tguser.tg_user_id)
             message = (
                 f"Hey {tg_user.first_name}!\n\n"
                 f"🔥 Your plan has been extended by `{Utilities.parse_duration_to_human_readable(additional_seconds)}`.\n"
                 f"📅 New expiry date: `{Utilities.get_date_str(rental.end_time)}`.\n\n Enjoy your server! 🚀"
             )
-            await client.send_message(rental.telegram_id, message)
+            await client.send_message(rental.tguser.tg_user_id, message)
 
         if amount_inr is not None:
             await event.respond(
