@@ -172,6 +172,7 @@ class UserRoutes:
         # If user exists in both the database and the system, proceed with deletion
         if await SystemUserManager.delete_system_user(username):
             rental.is_active = 0
+            rental.is_expired = 1
             user_in_db.deleted = 1
             storage.save()
             from models import job_manager
