@@ -201,7 +201,8 @@ class Utilities:
             rental.user.linux_password = password
             storage.save()
 
-    def check_redis():
+    @classmethod
+    def check_redis(cls):
         try:
             sh.redis_cli.ping()
             return True
