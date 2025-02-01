@@ -53,6 +53,7 @@ class Rental(BaseModel, Base):
         Integer, CheckConstraint("sent_expiry_notification IN (0, 1)"), default=0
     )
     price_rate = Column(REAL, nullable=False)
+    is_zombie = Column(Integer, CheckConstraint("is_zombie IN (0, 1)"), default=0)
 
     # Relationships
     user = relationship("User", back_populates="rentals")
