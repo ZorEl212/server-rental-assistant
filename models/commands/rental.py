@@ -75,7 +75,7 @@ class PlanRoutes:
             job_manager.schedule_rental_expiration(rental)
             await event.respond(
                 f"🔄 User `{username}`'s plan reduced!\n\n"
-                f"👤 User `{username}`\n   New expiry date: `{Utilities.get_date_str(rental.end_time)}`"
+                f"👤 User `{username}`\n   New expiry date: `{Utilities.get_date_str(rental.end_time)}`\n"
                 f"⏳ Duration reduced by : {Utilities.parse_duration_to_human_readable(abs(reduced_duration_seconds))}"
             )
 

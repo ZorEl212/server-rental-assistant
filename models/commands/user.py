@@ -49,26 +49,36 @@ class UserRoutes:
         amount = args[3]
         currency = args[4].upper()
 
-        user = storage.query_object("User", linux_username=username, deleted=0)
-        if SystemUserManager.is_user_exists(username) or user:
-            await event.respond(f"❌ User `{username}` already exists.")
-            return
+        user = storage.query_object("User", linux_username=username)
+        if user:
+            if SystemUserManager.is_user_exists(username) or not user.deleted:
+                await event.respond(f"❌ User `{username}` already exists.")
+                return
 
         password = Utilities.generate_password()
         expiry_time = int(time.time()) + plan_duration_seconds
         user_uuid = str(uuid.uuid4())
 
-        user = User(
-            linux_username=username,
-            linux_password=password,
-            uuid=user_uuid,
-            balance=0,
-        )
+        # Handle UNIQUE constraint OperationalError for users.linux_username
+        # What if username already exists in the db?
+        if user and user.deleted:
+            # That means it's a zombie entry, we shall update this
+            # instead of creating a new `User` instance.
+            user.linux_password = password
+            user.uuid = user_uuid
+            user.balance = 0
+            user.deleted = 0  # Since now the user is starting over again
+        else:
+            user = User(
+                linux_username=username,
+                linux_password=password,
+                uuid=user_uuid,
+                balance=0,
+            )
         try:
             payment = await Payment.create(
                 user_id=user.id, amount=amount, currency=currency
             )
-            print(payment.amount)
             await user.update_balance(payment.amount, "credit")
             await SystemUserManager.create_user(username, password)
             user.save()
@@ -173,6 +183,7 @@ class UserRoutes:
         if await SystemUserManager.delete_system_user(username):
             rental.is_active = 0
             rental.is_expired = 1
+            rental.is_zombie = 1  # Locks the row, making it immutable virtually
             user_in_db.deleted = 1
             storage.save()
             from models import job_manager
@@ -192,7 +203,10 @@ class UserRoutes:
         """
 
         users = storage.join(
-            "User", ["Rental", "TelegramUser"], filters={"deleted": 0}, outer=True
+            "User",
+            ["Rental", "TelegramUser"],
+            filters={"deleted": 0},
+            outer=True,
         )
         active_users = [
             user
@@ -207,7 +221,7 @@ class UserRoutes:
         response = f"👥 Total Users: {len(active_users)}\n\n"
 
         for user in active_users:
-            rental = user.rentals[0] if user.rentals else None
+            rental = user.rentals[-1] if user.rentals else None
             telegram_user = user.telegram_user[0] if user.telegram_user else None
 
             if rental:

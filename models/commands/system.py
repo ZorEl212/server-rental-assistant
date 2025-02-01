@@ -203,7 +203,7 @@ class SystemRoutes:
         first_name = event.sender.first_name
         last_name = event.sender.last_name
         username = user.linux_username
-        rental = storage.query_object("Rental", user_id=user.id)
+        rental = storage.query_object("Rental", user_id=user.id, is_zombie=0)
         tg_user = storage.query_object("TelegramUser", user_id=user.id)
 
         if tg_user and tg_user.tg_user_id != tg_user_id:
