@@ -7,6 +7,7 @@ from models.rentals import Rental
 from models.telegram_users import TelegramUser
 from models.users import User
 from resources.constants import DB_STRING
+from models import logger
 
 classes = {
     "Rental": Rental,
@@ -68,7 +69,11 @@ class DBStorage:
         :return: None
         """
 
-        Base.metadata.create_all(self.__engine)
+        try:
+            Base.metadata.create_all(self.__engine)
+        except Exception as e:
+            logger.exception(e.message)
+
         ses_factory = sessionmaker(bind=self.__engine, expire_on_commit=False)
         self.__session = scoped_session(ses_factory)
 

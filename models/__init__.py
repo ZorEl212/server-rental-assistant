@@ -55,16 +55,26 @@ Example Callback:
 - `"cancel"`: Cancels an ongoing plan operation, handled by `plan_routes.handle_cancel`.
 """
 
+import logging
+
 from telethon import TelegramClient
+from resources.constants import API_HASH, API_ID
+
+client = TelegramClient("server_plan_bot", API_ID, API_HASH)
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.DEBUG,
+    filename="server_plan_bot.log",
+    encoding="utf-8",
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 
 from models.engine.db_engine import DBStorage
-from resources.constants import API_HASH, API_ID
 
 # Initialization of DBStorage and the bot client
 storage = DBStorage()
 storage.reload()
 
-client = TelegramClient("server_plan_bot", API_ID, API_HASH)
 
 # Importing command handlers
 from models.commands.main_bot import BotManager

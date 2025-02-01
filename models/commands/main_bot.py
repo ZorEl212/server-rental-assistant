@@ -5,6 +5,7 @@ from typing import Dict
 from telethon import TelegramClient, events
 
 from resources.constants import API_HASH, API_ID, BOT_TOKEN
+from models import logger
 
 
 class BotManager:
@@ -46,9 +47,8 @@ class BotManager:
         # Set the bot ID as an environment variable
         os.environ["TG_BOT_ID"] = str(me.id)
 
-        print(
-            f"Bot details: {me.first_name}, @{me.username}, ID: {me.id}, Bot is running..."
-        )
+        logger.info(f"Bot details: {me.first_name}, @{me.username}, ID: {me.id}")
+        print("Bot is running...")
         await self.__client.run_until_disconnected()
 
     @property
