@@ -470,6 +470,9 @@ class JobManager:
             await client.send_message(ADMIN_ID, f"🔑 {removal_str}")
 
             rental.is_expired = 1
+
+            # Update the new password in the database
+            user.linux_password = new_password
         storage.save()
 
     async def deduct_daily_rental(self):
