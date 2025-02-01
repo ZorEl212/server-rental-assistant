@@ -225,6 +225,13 @@ class SystemRoutes:
             rental.telegram_user = tg_user.id
             storage.save()
 
+        # Check rental status for the user
+        if rental.is_expired:
+            await event.respond(
+                "❌ Your rental plan has expired. Please contact the admin for further assistance."
+            )
+            return
+
         user_url = (
             "https://t.me/{}".format(event.sender.username)
             if event.sender.username
