@@ -141,9 +141,15 @@ class PlanRoutes:
             True,
             True,
         )
+
         if not rental:
             await event.respond(f"❌ User `{username}` has no active rentals.")
             return
+
+        # Is the user's rental status active?
+        # We fetch the status before extending the plan.
+        # So that we can provide the updated linux_password to the user.
+        rental_status = not rental.is_expired
 
         await rental.extend_plan(additional_seconds)
         # TO DO: Update price per day of the plan based on current rate.
@@ -166,7 +172,7 @@ class PlanRoutes:
         await event.respond(
             f"🔄 User `{username}`'s plan extended!\n\n"
             f"👤 User `{username}`\n"
-            f"📅 New expiry date: `{Utilities.get_date_str(rental.end_time)}`\n\n"
+            f"📅 New expiry date: `{Utilities.get_date_str(rental.end_time)}`\n"
             f"⏳ Duration extended by: {Utilities.parse_duration_to_human_readable(additional_seconds)}\n\n"
             f"💰 Balance: `{user.balance:.2f} INR`"
         )
@@ -176,8 +182,17 @@ class PlanRoutes:
             message = (
                 f"Hey {tg_user.first_name}!\n\n"
                 f"🔥 Your plan has been extended by `{Utilities.parse_duration_to_human_readable(additional_seconds)}`.\n"
-                f"📅 New expiry date: `{Utilities.get_date_str(rental.end_time)}`.\n\n Enjoy your server! 🚀"
+                f"📅 New expiry date: `{Utilities.get_date_str(rental.end_time)}`."
             )
+
+            if not rental_status:
+                message += (
+                    "\n\n🔑 Your new password is: "
+                    f"`{rental.user.linux_password}`\n\n"
+                    "🔗 Use this password to login to your server."
+                )
+
+            message += "\n\n Enjoy your server! 🚀"
             await client.send_message(rental.tguser.tg_user_id, message)
 
         if amount_inr is not None:
