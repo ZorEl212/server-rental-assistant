@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Query, joinedload, scoped_session, sessionmaker
 from sqlalchemy.sql import or_
 
+from models import logger
 from models.baseModel import Base
 from models.payments import Payment
 from models.rentals import Rental
@@ -68,7 +69,11 @@ class DBStorage:
         :return: None
         """
 
-        Base.metadata.create_all(self.__engine)
+        try:
+            Base.metadata.create_all(self.__engine)
+        except Exception as e:
+            logger.exception(e.message)
+
         ses_factory = sessionmaker(bind=self.__engine, expire_on_commit=False)
         self.__session = scoped_session(ses_factory)
 

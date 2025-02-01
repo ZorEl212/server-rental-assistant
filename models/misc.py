@@ -9,7 +9,7 @@ import aiohttp
 import pytz
 import sh
 
-from models import storage
+from models import storage, logger
 from resources.constants import ADJECTIVES, ADMIN_ID, EXCHANGE_API_ID, NOUNS, TIME_ZONE
 
 
@@ -192,7 +192,7 @@ class Utilities:
         rentals = storage.join("Rental", ["User"], {"is_expired": 0, "is_active": 1})
         expired_rentals = [rental for rental in rentals if rental.end_time < now]
         for rental in expired_rentals:
-            print(f"Deactivating rental for user {rental.user.linux_username}")
+            logger.info(f"Deactivating rental for user {rental.user.linux_username}")
             rental.is_expired = 1
             password = await SystemUserManager.change_password(
                 username=rental.user.linux_username
@@ -233,9 +233,10 @@ class SystemUserManager:
             )
 
             await asyncio.to_thread(sh.sudo.chpasswd, _in=f"{username}:{password}")
-            print(f"System user {username} created successfully.")
+            logger.info(f"User {username} created successfully.")
+
         except sh.ErrorReturnCode as e:
-            print(f"Error creating user {username}: {e.stderr.decode()}")
+            logger.error(f"Error creating user {username}: {e.stderr.decode()}")
             raise
 
     @staticmethod
@@ -259,7 +260,7 @@ class SystemUserManager:
             )  # Allow exit code 12 (mail spool (/var/mail/[username]) not found)
             return True
         except sh.ErrorReturnCode as e:
-            print(f"Error deleting user {username}: {e.stderr.decode()}")
+            logger.error(f"Error deleting user {username}: {e.stderr.decode()}")
             return False
 
     @classmethod
@@ -283,10 +284,12 @@ class SystemUserManager:
                 _in=f"{password}\n{password}\n",
                 _err_to_out=True,
             )
-            print("Password successfully changed.")
+            logger.info(f"Password changed for user {username}.")
             return password
         except sh.ErrorReturnCode as e:
-            print(f"Error changing password: {e.stderr.decode()}")
+            logger.error(
+                f"Error changing password for user {username}: {e.stderr.decode()}"
+            )
             return None
 
     @classmethod
