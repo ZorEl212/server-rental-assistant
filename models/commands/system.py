@@ -143,7 +143,6 @@ class SystemRoutes:
         rentals = storage.join("Rental", ["TelegramUser"], {"is_active": 1})
         telegram_ids = {rental.tguser.tg_user_id for rental in rentals if rental.tguser}
 
-        print(telegram_ids)
         for telegram_id in telegram_ids:
             try:
                 await client.send_message(telegram_id, message)
@@ -224,6 +223,10 @@ class SystemRoutes:
             storage.new(tg_user)
             rental.telegram_user = tg_user.id
             storage.save()
+        else:
+            # The Telegram account details are already stored
+            # in this case, we just link the information to the user rental
+            rental.telegram_user = tg_user.id
 
         # Check rental status for the user
         if rental.is_expired:
@@ -310,6 +313,40 @@ class SystemRoutes:
         await event.respond(
             f"```\n{output}\n```",
         )
+
+    @classmethod
+    async def user_status(cls, event):
+        tg_user_id = event.sender_id
+        user = storage.query_object("TelegramUser", tg_user_id=tg_user_id)
+        if not user:
+            await event.respond("❌ User not found.")
+            return
+
+        rental = storage.query_object("Rental", telegram_user=user.id, is_zombie=0)
+        if not rental:
+            # Plan is either expired or not found
+            await event.respond("❌ Plan expired or not found.")
+            return
+
+        remaining_time = rental.end_time - int(time.time())
+        days, remainder = divmod(remaining_time, 86400)
+        hours, minutes = divmod(remainder, 3600)
+        minutes //= 60
+
+        linux_username = rental.user.linux_username
+        tg_first_name = rental.tguser.tg_first_name
+
+        message = "🖥️🐝 **ServerHive Server Rentals**\n\n"
+        message += "📋 **Plan Details**\n\n"
+        message += (
+            f"👤 **User:** {linux_username}\n"
+            f"📱 **Telegram User:** {tg_first_name}\n"
+            f"🟢 **Plan Status:** Active\n"
+            f"📅 **Expiry Date:** {Utilities.get_date_str(rental.end_time)}\n"
+            f"⏳ **Remaining Time:** {days} days, {hours} hours, {minutes} minutes"
+        )
+
+        await event.respond(message, parse_mode="markdown")
 
 
 class JobManager:
