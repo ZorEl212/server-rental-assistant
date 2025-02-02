@@ -338,8 +338,12 @@ class SystemUserManager:
         Returns:
             str: Output of the `w` command showing logged-in users.
         """
-        output = await asyncio.to_thread(sh.w)
-        return output
+        connected_users = await asyncio.create_subprocess_shell(
+            "w", stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+        stdout, _ = await connected_users.communicate()
+        connected_users = stdout.decode()
+        return connected_users
 
     @classmethod
     async def run_command(cls, command):
