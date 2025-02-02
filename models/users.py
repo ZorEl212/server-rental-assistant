@@ -1,6 +1,6 @@
 import time
 
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import UUID, Boolean, Column, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from models.baseModel import Base, BaseModel
@@ -19,12 +19,12 @@ class User(BaseModel, Base):
 
     __tablename__ = "users"
 
-    uuid = Column(Text, unique=True, default=None)
+    uuid = Column(String(36), unique=True, default=None)
     linux_username = Column(Text, nullable=False)
     linux_password = Column(Text, nullable=False)
     balance = Column(Integer, default=0)
     last_deduction_time = Column(Integer, default=time.time())
-    deleted = Column(Integer, default=0)
+    deleted = Column(Boolean, default=False)
 
     # Relationships
     telegram_user = relationship(

@@ -1,7 +1,9 @@
 import time
-from models.baseModel import Base, BaseModel
-from sqlalchemy import Column, String, Text, Integer, ForeignKey, CheckConstraint, REAL
+
+from sqlalchemy import REAL, CheckConstraint, Column, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
+
+from models.baseModel import Base, BaseModel
 
 
 class Payment(BaseModel, Base):
@@ -18,7 +20,9 @@ class Payment(BaseModel, Base):
 
     __tablename__ = "payments"
 
-    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     amount = Column(REAL, nullable=False)
     currency = Column(
         Text, CheckConstraint("currency IN ('INR', 'USD')"), nullable=False
