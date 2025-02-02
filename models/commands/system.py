@@ -129,6 +129,11 @@ class SystemRoutes:
         Broadcast a message to all users with registered telegram accounts.
         :param event: Event object.
         :return: None
+
+        Information:
+        Broadcasting was initially meant for sending messages to all users with registered Telegram accounts.
+
+        Now, we can also use it to send messages to all connected users through the pts (pseudo-terminal sessions).
         """
 
         if len(event.message.text.split()) < 2:
@@ -149,7 +154,23 @@ class SystemRoutes:
             except Exception:
                 pass
 
-        await event.respond(f"✅ Broadcasted message to {len(telegram_ids)} user(s).")
+        # Broadcast to /dev/pts kernel nodes
+        # This will broadcast the message to all connected users
+        process = await asyncio.create_subprocess_shell(
+            "wall",
+            message,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await process.communicate()
+        if process.returncode != 0:
+            await event.respond(
+                f"✅ Broadcasted message to {len(telegram_ids)} user(s).\n❌ Error broadcasting to pts: {stderr.decode()}"
+            )
+        else:
+            await event.respond(
+                f"✅ Broadcasted message to {len(telegram_ids)} user(s).\n✅ Broadcast to pts successful: {stdout.decode()}"
+            )
 
     # /who command
     @Auth.authorized_user
