@@ -1,6 +1,15 @@
 import time
 
-from sqlalchemy import REAL, CheckConstraint, Column, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    DECIMAL,
+    REAL,
+    CheckConstraint,
+    Column,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.orm import relationship
 
 from models.baseModel import Base, BaseModel
@@ -43,7 +52,7 @@ class Rental(BaseModel, Base):
     start_time = Column(Integer, nullable=False)
     end_time = Column(Integer, nullable=False)
     plan_duration = Column(Integer, nullable=False)
-    amount = Column(REAL, nullable=False)
+    amount = Column(DECIMAL, nullable=False)
     currency = Column(
         Text, CheckConstraint("currency IN ('INR', 'USD')"), nullable=False
     )
