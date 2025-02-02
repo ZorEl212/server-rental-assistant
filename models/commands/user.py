@@ -178,7 +178,7 @@ class UserRoutes:
             )
             return
 
-        rental = storage.query_object("Rental", user_id=user_in_db.id)
+        rental = storage.query_object("Rental", user_id=user_in_db.id, is_zombie=0)
         # If user exists in both the database and the system, proceed with deletion
         if await SystemUserManager.delete_system_user(username):
             rental.is_active = 0
