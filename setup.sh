@@ -12,10 +12,10 @@ then
     exit 1
 fi
 
-# Check if virtualenv is installed
-if ! command -v virtualenv &> /dev/null
+# Check if python3-venv is installed
+if ! dpkg -s python3-venv &> /dev/null
 then
-    echo "Virtualenv is not installed. Please install virtualenv"
+    echo "python3-venv is not installed. Please install python3-venv"
     exit 1
 fi
 
