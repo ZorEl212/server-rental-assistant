@@ -157,19 +157,19 @@ class SystemRoutes:
         # Broadcast to /dev/pts kernel nodes
         # This will broadcast the message to all connected users
         process = await asyncio.create_subprocess_shell(
-            "wall",
-            message,
+            "sudo wall",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            stdin=asyncio.subprocess.PIPE,
         )
-        stdout, stderr = await process.communicate()
+        stdout, stderr = await process.communicate(input=message.encode())
         if process.returncode != 0:
             await event.respond(
                 f"✅ Broadcasted message to {len(telegram_ids)} user(s).\n❌ Error broadcasting to pts: {stderr.decode()}"
             )
         else:
             await event.respond(
-                f"✅ Broadcasted message to {len(telegram_ids)} user(s).\n✅ Broadcast to pts successful: {stdout.decode()}"
+                f"✅ Broadcasted message to {len(telegram_ids)} user(s).\n✅ Broadcast to pts successful"
             )
 
     # /who command
