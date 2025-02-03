@@ -18,7 +18,7 @@ from telethon import Button, client
 from telethon.tl.types import PeerUser
 from weasyprint import HTML
 
-from models import client, storage
+from models import client, storage, logger
 from models.misc import Auth, SystemUserManager, Utilities
 from models.telegram_users import TelegramUser
 from resources.constants import ADMIN_ID
@@ -120,7 +120,7 @@ class SystemRoutes:
 
         except Exception as e:
             await event.respond(f"❌ Error generating report: {e}")
-            traceback.print_exc()
+            logger.exception(e.message)
 
     @Auth.authorized_user
     async def broadcast(self, event):
@@ -330,7 +330,7 @@ class SystemRoutes:
             if line:
                 user, size = line.split()
                 disk_usage[user] = float(size)
-        print(disk_usage)
+        logger.info(f"Disk usage: {disk_usage}")
         await event.respond(
             f"```\n{output}\n```",
         )
@@ -406,7 +406,7 @@ class JobManager:
             "name": name,
         }
         await self.redis_conn.hset("jobs", job_id, json.dumps(job_data))
-        print(f"Job {job_id} saved to Redis.")
+        logger.info(f"Job {job_id} saved to Redis.")
 
     async def remove_job_from_redis(self, job_id):
         """
@@ -417,7 +417,7 @@ class JobManager:
         """
 
         await self.redis_conn.hdel("jobs", job_id)
-        print(f"Job {job_id} removed from Redis.")
+        logger.info(f"Job {job_id} removed from Redis.")
 
     async def remove_notification_jobs(self, rental_id):
         """
@@ -473,7 +473,7 @@ class JobManager:
                     args=job_info["args"],
                     new_job=False,
                 )
-                print(f"Job {job_id} reloaded from Redis.")
+                logger.info(f"Loaded job {job_id} from Redis.")
 
     async def handle_expired_rental(self, rental_id):
         """
@@ -557,8 +557,7 @@ class JobManager:
                 total_deduction = days_elapsed * rental.price_rate
 
                 if user.balance >= total_deduction:
-                    new_balance = user.balance - total_deduction
-                    await user.update_balance(new_balance, "debit")
+                    await user.update_balance(-total_deduction, "debit")
 
                     deduction_time = (
                         datetime.now()
@@ -571,20 +570,17 @@ class JobManager:
                     storage.save()
 
                     # Log the successful deduction
-                    print(
-                        f"Deducted {total_deduction} {rental.currency} "
-                        f"from {user.linux_username}'s balance. "
-                        f"New balance: {new_balance}."
+                    logger.info(
+                        f"Deducted {total_deduction} {rental.currency} from {user.linux_username}'s balance. New balance: {user.balance}."
                     )
                 else:
                     # Insufficient balance case
-                    print(
-                        f"Insufficient balance for {user.linux_username} to deduct rental fee. "
-                        f"Balance: {user.balance}, Required: {total_deduction}."
+                    logger.info(
+                        f"Insufficient balance for {user.linux_username} to deduct rental fee. Balance: {user.balance}, Required: {total_deduction}."
                     )
         except Exception as e:
             # General error handling
-            print(f"Error during daily rental deduction: {e}")
+            logger.exception(e.message)
 
     def schedule_rental_expiration(self, rental):
         """
@@ -605,7 +601,9 @@ class JobManager:
             args=[rental.id],
             replace_existing=True,
         )
-        print(f"Scheduled expiration job for rental {rental.id} at {expiration_time}")
+        logger.info(
+            f"Scheduled expiration job for rental {rental.id} at {expiration_time}"
+        )
 
     async def schedule_notification_job(self, rental):
         """
@@ -631,7 +629,7 @@ class JobManager:
                 args=[rental.id],
                 replace_existing=True,
             )
-            print(
+            logger.info(
                 f"Scheduled 12-hour notification for rental {rental.id} at {notification_time_12hrs}"
             )
 
@@ -647,7 +645,7 @@ class JobManager:
                 args=[rental.id],
                 replace_existing=True,
             )
-            print(
+            logger.info(
                 f"Scheduled 2-hour notification for rental {rental.id} at {notification_time_2hrs}"
             )
 
@@ -759,7 +757,7 @@ class JobManager:
             replace_existing=True,
             name="deduction",
         )
-        print("Scheduled daily deduction job.")
+        logger.info(f"Scheduled daily deduction job at {self.DEDUCTION_HOUR}:00")
 
     def job_listener(self, event):
         """
@@ -770,9 +768,9 @@ class JobManager:
         """
 
         if event.exception:
-            print(f"Job {event.job_id} failed")
+            logger.exception(f"Job {event.job_id} failed")
         else:
-            print(f"Job {event.job_id} executed successfully")
+            logger.info(f"Job {event.job_id} executed successfully")
 
     def serialize_trigger(self, trigger):
         """
@@ -851,7 +849,7 @@ class JobManager:
         )
         await self.init_redis()
         self.scheduler.start()
-        print("Scheduler started.")
+        logger.info("Scheduler started.")
 
         job_data = await self.redis_conn.hgetall("jobs")
         if job_data:

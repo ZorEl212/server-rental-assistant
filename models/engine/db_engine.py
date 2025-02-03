@@ -1,12 +1,13 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Query, joinedload, scoped_session, sessionmaker
-from sqlalchemy.sql import or_
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 from models.baseModel import Base
 from models.payments import Payment
 from models.rentals import Rental
 from models.telegram_users import TelegramUser
 from models.users import User
+from resources.constants import DB_STRING
+from models import logger
 
 classes = {
     "Rental": Rental,
@@ -26,7 +27,7 @@ class DBStorage:
     __session = None
 
     def __init__(self):
-        self.__engine = create_engine("sqlite:///server-database.db", echo=False)
+        self.__engine = create_engine(DB_STRING, pool_pre_ping=True)
 
     def all(self, cls=None, filters=None):
         """
@@ -68,7 +69,11 @@ class DBStorage:
         :return: None
         """
 
-        Base.metadata.create_all(self.__engine)
+        try:
+            Base.metadata.create_all(self.__engine)
+        except Exception as e:
+            logger.exception(e.message)
+
         ses_factory = sessionmaker(bind=self.__engine, expire_on_commit=False)
         self.__session = scoped_session(ses_factory)
 
