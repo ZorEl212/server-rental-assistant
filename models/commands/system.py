@@ -676,6 +676,7 @@ class JobManager:
         rental = storage.join(
             "Rental", ["User", "TelegramUser"], {"id": rental_id}, fetch_one=True
         )
+        is_tg_user = True
 
         if not rental:
             # That means no rentals are found linked with telegram_users
