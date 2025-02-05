@@ -10,7 +10,7 @@ import pytz
 import sh
 
 from models import storage
-from resources.constants import ADJECTIVES, ADMIN_ID, EXCHANGE_API_ID, NOUNS, TIME_ZONE
+from resources.constants import ADJECTIVES, ADMIN_ID, NOUNS, TIME_ZONE
 
 
 class Auth:
@@ -166,7 +166,7 @@ class Utilities:
         return duration_str
 
     @classmethod
-    async def get_exchange_rate(cls, from_currency, to_currency):
+    async def get_exchange_rate(cls, from_currency="USD", to_currency="INR"):
         """
         Fetch the exchange rate between two currencies using an external API.
 
@@ -180,14 +180,24 @@ class Utilities:
         Raises:
             ValueError: If the API ID is not set.
         """
-        if not EXCHANGE_API_ID:
-            raise ValueError("Exchange API ID not set.")
-
-        url = f"https://v6.exchangerate-api.com/v6/{EXCHANGE_API_ID}/latest/{from_currency}"
+        url = "https://www.bing.com/qbox?query=1+usd+to+inr&language=en-US&pt=EdgBox&cvid=d4b9392eaff6493b9450214147615636&oit=4&cp=12&pgcl=1&richanswersentity=1"
+        headers = {
+            "Connection": "keep-alive",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 Edg/132.0.0.0",
+        }
         async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
+            async with session.get(url, headers=headers) as response:
+                response.raise_for_status()
                 data = await response.json()
-                return data["conversion_rates"][to_currency]
+
+        try:
+            return float(
+                data[4]["google:suggestdetail"][0]["ansa"]["l"][0]["il"]["t"][0][
+                    "t"
+                ].replace("1 = ", "")
+            )
+        except:
+            return 86.5
 
     @classmethod
     async def deactivate_expired_rentals(cls):
