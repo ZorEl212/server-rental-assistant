@@ -369,8 +369,8 @@ class SystemUserManager:
         Returns:
             str: The output of the command.
         """
-        try:
-            output = await asyncio.to_thread(sh.bash, "-c", command)
-        except sh.ErrorReturnCode as e:
-            output = e.stderr.decode()
-        return output
+        process = await asyncio.create_subprocess_shell(
+            command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await process.communicate()
+        return stdout.decode() if process.returncode == 0 else stderr.decode()
