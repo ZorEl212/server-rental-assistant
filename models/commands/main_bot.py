@@ -45,6 +45,7 @@ class BotManager:
 
         # Set the bot ID as an environment variable
         os.environ["TG_BOT_ID"] = str(me.id)
+        os.environ["TG_BOT_USERNAME"] = str(me.username)
 
         print(
             f"Bot details: {me.first_name}, @{me.username}, ID: {me.id}, Bot is running..."
@@ -69,11 +70,16 @@ class BotManager:
         """
 
         command = event.message.text.split()[0]
+
+        if "@" in command:
+            command, username = command.split("@")
+
+            if username != os.environ["TG_BOT_USERNAME"]:
+                return
+
         handler = self.ROUTES.get(command)
         if handler:
             await handler(event)
-        else:
-            await event.respond("Unknown command. Type /help for available commands.")
 
     async def callback_handler(self, event):
         """
