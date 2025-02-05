@@ -46,9 +46,12 @@ class Auth:
 
         @wraps(func)
         async def wrapper(self, event, *args, **kwargs):
+            if event.is_group:
+                return
             if not Auth.is_authorized_user(event.sender_id):
                 await event.respond("❌ You are not authorized to use this command.")
                 return
+
             return await func(self, event, *args, **kwargs)
 
         return wrapper
