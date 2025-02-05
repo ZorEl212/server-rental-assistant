@@ -489,17 +489,7 @@ class JobManager:
             user = rental.user
             telegram_id = rental.tguser.tg_user_id if rental.tguser else None
 
-            if telegram_id:
-                tg_user = await client.get_entity(telegram_id)
-            else:
-                tg_user = None
-
-            message = (
-                f"Hey {tg_user.first_name}!\n\n"
-                f"❌ Your plan for the user: `{user.linux_username}` has been expired."
-                f"\n\nThanks for using our service. 🙏"
-                f"\nFeel free to contact the admin for any queries. 📞"
-            )
+            # If the tg_user is none, we will not be able to send a message
 
             new_password = await SystemUserManager.change_password(user.linux_username)
 
@@ -508,6 +498,13 @@ class JobManager:
             )
 
             if telegram_id:
+                tg_user = await client.get_entity(telegram_id)
+                message = (
+                    f"Hey {tg_user.first_name}!\n\n"
+                    f"❌ Your plan for the user: `{user.linux_username}` has been expired."
+                    f"\n\nThanks for using our service. 🙏"
+                    f"\nFeel free to contact the admin for any queries. 📞"
+                )
                 await client.send_message(telegram_id, message)
 
             await client.send_message(
@@ -675,61 +672,78 @@ class JobManager:
         :return: None
         """
 
+        # Fetch the rental object with linked with telegram user only
         rental = storage.join(
             "Rental", ["User", "TelegramUser"], {"id": rental_id}, fetch_one=True
         )
+
+        if not rental:
+            # That means no rentals are found linked with telegram_users
+            # Fetch only the rental object
+            rental = storage.query_object("Rental", id=rental_id)
+            is_tg_user = False
 
         if rental and not rental.sent_expiry_notification:
             user = rental.user
             tg_user = rental.tguser
             remaining_time = datetime.fromtimestamp(rental.end_time) - datetime.now()
 
-            admin, telegram_user = await asyncio.gather(
-                client.get_entity(PeerUser(ADMIN_ID)),
-                client.get_entity(
-                    PeerUser(tg_user.tg_user_id) if tg_user else None,
-                ),
-                return_exceptions=True,
-            )
+            # Let's handle a case where tg_user is None
+            # This means that the user has not linked their Telegram account
+            # In this case, we will send the notification to the admin
+
             remaining_time_str = (
                 f"{remaining_time.days} days, "
                 f"{remaining_time.seconds // 3600} hours, "
                 f"{(remaining_time.seconds // 60) % 60} minutes"
             )
             message = (
-                f"⏰ {telegram_user.first_name}, Your plan for user `{user.linux_username}` "
+                "⏰ {0}, Your plan for user `{1}` "
                 f"will expire in {remaining_time_str}."
-                "\n\nPlease contact the admin if you want to extend the plan. 🔄"
-                "\nYour data will be deleted after the expiry time. 🗑️"
             )
+            if is_tg_user and tg_user.tg_user_id:
+                telegram_user = await client.get_entity(
+                    PeerUser(tg_user.tg_user_id),
+                )
+                message += (
+                    "\n\nPlease contact the admin if you want to extend the plan. 🔄"
+                )
+                message += "\nYour data will be deleted after the expiry time. 🗑️"
+                message = message.format(telegram_user.first_name, user.linux_username)
+            else:
+                # Edit message accordingly to the admin
+                message = message.replace("Your plan", "The plan")
+                message = message.format(
+                    f"Hey {os.environ['ADMIN_FIRSTNAME']}", user.linux_username
+                )
 
             # Parse an Extend my Plan button
-            contact_url = f"https://t.me/{admin.username}"
-
-            # Get current bot details
-            current_bot_id = os.environ["TG_BOT_ID"]
+            contact_url = f"https://t.me/{os.environ['ADMIN_USERNAME']}"
 
             # Get the bot username
-            bot_entity = await client.get_entity(int(current_bot_id))
+            bot_username = os.environ["TG_BOT_USERNAME"]
 
-            extension_request_msg = f"📢 Hello {admin.username}, \nI would like to extend my current rental plan."
+            extension_request_msg = f"📢 Hello {os.environ['ADMIN_FIRSTNAME']}, \nI would like to extend my current rental plan."
             extension_request_msg += f"\n\n👤 User: {user.linux_username}"
             extension_request_msg += (
                 f"\n📅 Expiry Date: {Utilities.get_date_str(rental.end_time)}"
             )
-            extension_request_msg += f"\n🔗 Referred by: @{bot_entity.username}"
+            extension_request_msg += f"\n🔗 Referred by: @{bot_username}"
 
             contact_url += "?text=" + urllib.parse.quote(extension_request_msg)
 
-            await client.send_message(
-                tg_user.tg_user_id if tg_user else ADMIN_ID,
-                message,
-                buttons=[
-                    [
-                        Button.url("🚀 Extend My Plan", contact_url),
-                    ]
-                ],
-            )
+            if is_tg_user and telegram_user:
+                await client.send_message(
+                    telegram_user.id,
+                    message,
+                    buttons=[
+                        [
+                            Button.url("🚀 Extend My Plan", contact_url),
+                        ]
+                    ],
+                )
+            else:
+                await client.send_message(ADMIN_ID, message)
             rental.sent_expiry_notification = 1
             storage.save()
 

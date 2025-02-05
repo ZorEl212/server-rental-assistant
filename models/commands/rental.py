@@ -92,6 +92,8 @@ class PlanRoutes:
         :return: None
         """
 
+        from models import job_manager
+
         args = event.message.text.split()
         if len(args) < 3:
             await event.respond(
@@ -109,8 +111,12 @@ class PlanRoutes:
 
         if username == "all":
             active_rentals = storage.join("Rental", ["User"], {"is_active": 1})
+
             for rental in active_rentals:
+
                 await rental.extend_plan(additional_seconds)
+                await job_manager.schedule_notification_job(rental)
+                job_manager.schedule_rental_expiration(rental)
 
             response = "🔄 All users' plans extended!\n\n" + "\n".join(
                 [
@@ -161,7 +167,6 @@ class PlanRoutes:
             amount_inr = payment.amount
             await user.update_balance(payment.amount, "credit")
             payment.save()
-            from models import job_manager
 
             await job_manager.schedule_notification_job(rental)
             job_manager.schedule_rental_expiration(rental)

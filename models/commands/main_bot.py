@@ -39,17 +39,21 @@ class BotManager:
         self.__client.add_event_handler(
             self.callback_handler, events.CallbackQuery(pattern=re.compile(r".*"))
         )
-
         # Get bot details
         me = await self.__client.get_me()
+
+        print(
+            f"Bot details: {me.first_name}, @{me.username}, ID: {me.id}, Bot is running..."
+        )
 
         # Set the bot ID as an environment variable
         os.environ["TG_BOT_ID"] = str(me.id)
         os.environ["TG_BOT_USERNAME"] = str(me.username)
 
-        print(
-            f"Bot details: {me.first_name}, @{me.username}, ID: {me.id}, Bot is running..."
-        )
+        # Get the admin details
+        admin = await self.__client.get_entity(int(os.environ["ADMIN_ID"]))
+        os.environ["ADMIN_USERNAME"] = admin.username
+        os.environ["ADMIN_FIRSTNAME"] = admin.first_name
         await self.__client.run_until_disconnected()
 
     @property
