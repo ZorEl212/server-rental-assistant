@@ -315,25 +315,31 @@ class SystemRoutes:
     @classmethod
     async def check_disk_usage(cls, event):
         """
-        Check the disk usage of the system.
+        Check the disk usage of the system and include warnings for high usage.
 
         Returns:
-            str: The output of the `df` command.
+            str: The output of the `df` command with emojis.
         """
         command = "sudo du -s /home/* 2>/dev/null | awk -F'/' '{user = $NF; size[$NF] = $1} END {for (user in size) printf \"%s %.2f\\n\", user, size[user] / 1024 / 1024}'"
         await event.respond("🔄 Checking disk usage...")
+
         output = await SystemUserManager.run_command(command)
 
-        # Parse into the dictionary
+        # Parse output into a dictionary
         disk_usage = {}
+        formatted_output = "📊 Disk Usage Report:\n"
+
         for line in output.split("\n"):
             if line:
                 user, size = line.split()
-                disk_usage[user] = float(size)
-        print(disk_usage)
-        await event.respond(
-            f"```\n{output}\n```",
-        )
+                size_gb = float(size)
+                warning = " ⚠️" if size_gb > 600 else ""
+                formatted_output += f"👤 {user}: {size_gb:.2f} GB{warning}\n"
+                disk_usage[user] = size_gb
+
+        print(disk_usage)  # Debugging purposes
+
+        await event.respond(f"```\n{formatted_output}\n```")
 
     @classmethod
     async def user_status(cls, event):
