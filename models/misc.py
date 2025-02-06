@@ -147,23 +147,33 @@ class Utilities:
             duration_seconds (int): The duration in seconds.
 
         Returns:
-            str: The human-readable duration string.
+            str: The human-readable duration string. Returns "Expired" if the duration is zero or negative.
         """
         if duration_seconds <= 0:
             return "Expired"
-        duration_str = ""
-        if duration_seconds // (24 * 3600) > 0:
-            duration_str += f"{duration_seconds // (24 * 3600)} days, "
+
+        parts = []
+        days = duration_seconds // (24 * 3600)
+        if days > 0:
+            parts.append(f"{days} day{'s' if days > 1 else ''}")
             duration_seconds %= 24 * 3600
-        if duration_seconds // 3600 > 0:
-            duration_str += f"{duration_seconds // 3600} hours, "
+
+        hours = duration_seconds // 3600
+        if hours > 0:
+            parts.append(f"{hours} hour{'s' if hours > 1 else ''}")
             duration_seconds %= 3600
-        if duration_seconds // 60 > 0:
-            duration_str += f"{duration_seconds // 60} minutes, "
+
+        minutes = duration_seconds // 60
+        if minutes > 0:
+            parts.append(f"{minutes} minute{'s' if minutes > 1 else ''}")
             duration_seconds %= 60
+
         if duration_seconds > 0:
-            duration_str += f"{duration_seconds} seconds"
-        return duration_str
+            parts.append(
+                f"{duration_seconds} second{'s' if duration_seconds > 1 else ''}"
+            )
+
+        return ", ".join(parts)
 
     @classmethod
     async def get_exchange_rate(cls, from_currency="USD", to_currency="INR"):
