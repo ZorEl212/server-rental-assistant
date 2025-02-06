@@ -8,6 +8,7 @@ import traceback
 import urllib.parse
 from datetime import datetime, timedelta
 
+import pytz
 import redis.asyncio as redis
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -21,7 +22,7 @@ from weasyprint import HTML
 from models import client, storage
 from models.misc import Auth, SystemUserManager, Utilities
 from models.telegram_users import TelegramUser
-from resources.constants import ADMIN_ID
+from resources.constants import ADMIN_ID, TIME_ZONE
 
 
 class SystemRoutes:
@@ -261,15 +262,32 @@ class SystemRoutes:
             if event.sender.username
             else "tg://user?id={}".format(event.sender_id)
         )
+
+        ist = pytz.timezone(TIME_ZONE)
+        expiry_date_ist = datetime.fromtimestamp(rental.end_time, ist)
+
+        now = datetime.now(pytz.utc).astimezone(ist)
+
+        remaining_time = expiry_date_ist - now
+        remaining_time_str = (
+            f"{remaining_time.days} days, {remaining_time.seconds // 3600} hours, "
+            f"{(remaining_time.seconds // 60) % 60} minutes"
+        )
+
         user_tag = f"<a href='{user_url}'>{html.escape(first_name)}</a>"
         response_msg = (
-            f"{user_tag}\n\n"
+            f"👋 Hello {user_tag}!\n\n"
+            f"Here are your access details:\n\n"
             f"🔑 <strong>Username:</strong> <code>{html.escape(username)}</code>\n"
-            f"🔒 <strong>Password:</strong> <code>{html.escape(user.linux_password)}</code>"
+            f"🔒 <strong>Password:</strong> <code>{html.escape(user.linux_password)}</code>\n\n"
+            f"🗓️ <strong>Plan Duration:</strong> {Utilities.parse_duration_to_human_readable(rental.plan_duration)}\n"
+            f"📅 <strong>Plan Start:</strong> {Utilities.get_date_str(rental.start_time)}\n"
+            f"📅 <strong>Plan Expiry:</strong> {Utilities.get_date_str(rental.end_time)}\n"
+            f"⏳ <strong>Time Remaining:</strong> {remaining_time_str}\n"
         )
         await event.respond(response_msg, parse_mode="html", link_preview=False)
 
-        admin_msg = f"🔑 Password sent to user {user_tag} bearing linux username: <code>{username}</code>"
+        admin_msg = f"🔑 Password sent to user {user_tag} (<code>{username}</code>)"
         await client.send_message(
             ADMIN_ID, admin_msg, parse_mode="html", link_preview=False
         )
@@ -368,7 +386,9 @@ class SystemRoutes:
         message += (
             f"👤 **User:** {linux_username}\n"
             f"📱 **Telegram User:** {tg_first_name}\n"
-            f"🟢 **Plan Status:** Active\n"
+            f"✅ **Plan Status:** Active\n"
+            f"🗓️ **Plan Duration:** {Utilities.parse_duration_to_human_readable(rental.plan_duration)}\n"
+            f"📅 **Plan Start:** {Utilities.get_date_str(rental.start_time)}\n"
             f"📅 **Expiry Date:** {Utilities.get_date_str(rental.end_time)}\n"
             f"⏳ **Remaining Time:** {days} days, {hours} hours, {minutes} minutes"
         )
