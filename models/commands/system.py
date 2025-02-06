@@ -708,7 +708,7 @@ class JobManager:
                 "⏰ {0}, Your plan for user `{1}` "
                 f"will expire in {remaining_time_str}."
             )
-            if is_tg_user and tg_user.tg_user_id:
+            if is_tg_user and tg_user:
                 telegram_user = await client.get_entity(
                     PeerUser(tg_user.tg_user_id),
                 )
