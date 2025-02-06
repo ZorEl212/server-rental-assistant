@@ -258,10 +258,20 @@ class UserRoutes:
                     )
                 else:
                     remaining_time = expiry_date_ist - now
-                    remaining_time_str = (
-                        f"{remaining_time.days} days, {remaining_time.seconds // 3600} hours, "
-                        f"{(remaining_time.seconds // 60) % 60} minutes"
-                    )
+                    days = remaining_time.days
+                    hours = remaining_time.seconds // 3600
+                    minutes = (remaining_time.seconds // 60) % 60
+
+                    days_str = f"{days} day{'s' if days != 1 else ''}"
+                    hours_str = f"{hours} hour{'s' if hours != 1 else ''}"
+                    minutes_str = f"{minutes} minute{'s' if minutes != 1 else ''}"
+
+                    if days > 0:
+                        remaining_time_str = f"{days_str}, {hours_str}, {minutes_str}"
+                    elif hours > 0:
+                        remaining_time_str = f"{hours_str}, {minutes_str}"
+                    else:
+                        remaining_time_str = minutes_str
 
                     response += (
                         f"<p>✨ <strong>Username:</strong> <code>{html.escape(user.linux_username)}</code>\n"
