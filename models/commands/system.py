@@ -367,8 +367,8 @@ class SystemRoutes:
             await event.respond("❌ User not found.")
             return
 
-        rental = storage.query_object("Rental", telegram_user=user.id, is_zombie=0)
-        if not rental:
+        rental = user.rentals[0]
+        if not rental or rental.is_zombie or rental.is_expired or not rental.is_active:
             # Plan is either expired or not found
             await event.respond("❌ Plan expired or not found.")
             return
@@ -377,7 +377,6 @@ class SystemRoutes:
         days, remainder = divmod(remaining_time, 86400)
         hours, minutes = divmod(remainder, 3600)
         minutes //= 60
-
         linux_username = rental.user.linux_username
         tg_first_name = rental.tguser.tg_first_name
 

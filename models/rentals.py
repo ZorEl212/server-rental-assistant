@@ -66,7 +66,7 @@ class Rental(BaseModel, Base):
 
     # Relationships
     user = relationship("User", back_populates="rentals")
-    tguser = relationship("TelegramUser")
+    tguser = relationship("TelegramUser", back_populates="rentals")
 
     async def modify_plan_duration(self, duration_change_seconds, action="reduced"):
         """
