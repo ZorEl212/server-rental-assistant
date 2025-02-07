@@ -38,3 +38,9 @@ class TelegramUser(BaseModel, Base):
         back_populates="telegram_user",
         doc="Relationship linking TelegramUser to the User model.",
     )
+    rentals = relationship(
+        "Rental",
+        back_populates="tguser",
+        cascade="all, delete",
+        doc="Relationship linking TelegramUser to the Rental model.",
+    )
