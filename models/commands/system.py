@@ -362,16 +362,16 @@ class SystemRoutes:
     @classmethod
     async def user_status(cls, event):
         tg_user_id = event.sender_id
-        user = storage.query_object("TelegramUser", tg_user_id=tg_user_id)
-        if not user:
-            await event.respond("❌ User not found.")
+        tguser = storage.query_object("TelegramUser", tg_user_id=tg_user_id)
+
+        if not tguser:
+            await event.respond("❌ You are not linked to any user.")
             return
 
-        rental = user.rentals[0]
-        if not rental or rental.is_zombie or rental.is_expired or not rental.is_active:
-            # Plan is either expired or not found
-            await event.respond("❌ Plan expired or not found.")
-            return
+        rental = storage.query_object("Rental", user_id=tguser.user_id, is_zombie=0)
+
+        if not rental:
+            await event.respond("❌ No active rental found for your user.")
 
         remaining_time = rental.end_time - int(time.time())
         days, remainder = divmod(remaining_time, 86400)
