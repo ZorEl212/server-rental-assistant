@@ -373,6 +373,8 @@ class SystemRoutes:
         if not rental:
             await event.respond("❌ No active rental found for your user.")
 
+        # TODO: Handle the case when the rental object is iterable
+
         remaining_time = rental.end_time - int(time.time())
         days, remainder = divmod(remaining_time, 86400)
         hours, minutes = divmod(remainder, 3600)
