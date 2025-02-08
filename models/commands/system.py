@@ -244,11 +244,12 @@ class SystemRoutes:
             )
             storage.new(tg_user)
             rental.telegram_user = tg_user.id
-            storage.save()
         else:
             # The Telegram account details are already stored
             # in this case, we just link the information to the user rental
             rental.telegram_user = tg_user.id
+
+        storage.save()
 
         # Check rental status for the user
         if rental.is_expired:
@@ -362,13 +363,15 @@ class SystemRoutes:
     @classmethod
     async def user_status(cls, event):
         tg_user_id = event.sender_id
-        tguser = storage.query_object("TelegramUser", tg_user_id=tg_user_id)
+        telegram_account = storage.query_object("TelegramUser", tg_user_id=tg_user_id)
 
-        if not tguser:
+        if not telegram_account:
             await event.respond("❌ You are not linked to any user.")
             return
 
-        rental = storage.query_object("Rental", user_id=tguser.user_id, is_zombie=0)
+        rental = storage.query_object(
+            "Rental", user_id=telegram_account.user_id, is_zombie=0
+        )
 
         if not rental:
             await event.respond("❌ No active rental found for your user.")
@@ -380,7 +383,7 @@ class SystemRoutes:
         hours, minutes = divmod(remainder, 3600)
         minutes //= 60
         linux_username = rental.user.linux_username
-        tg_first_name = rental.tguser.tg_first_name
+        tg_first_name = telegram_account.tg_first_name
 
         message = "🖥️🐝 **ServerHive Server Rentals**\n\n"
         message += "📋 **Plan Details**\n\n"
