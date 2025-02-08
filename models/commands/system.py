@@ -320,16 +320,49 @@ class SystemRoutes:
     async def run_command(self, event, command=None):
         """
         A handler for the /run command. This command is used to run commands on the server.
+        It handles long outputs by splitting them into multiple messages.
         :param event: Event object.
         :return:
         """
 
         if len(event.message.text.split()) <= 1:
+            await event.respond("❓ Usage: /run <command>")
             return
 
         command = event.message.text.split(" ", 1)[1]
-        output = await SystemUserManager.run_command(command)
-        await event.respond(f"```\n{output}\n```")
+
+        await event.respond(f"🔄 Executing: `{command}`...")
+
+        try:
+            process = await asyncio.create_subprocess_shell(
+                command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await process.communicate()
+            output = stdout.decode()
+            return_code = process.returncode
+
+            # Telegram message limit is 4096 characters.  We split the output into chunks.
+            chunk_size = 4000
+            output_chunks = [
+                output[i : i + chunk_size] for i in range(0, len(output), chunk_size)
+            ]
+
+            for i, chunk in enumerate(output_chunks):
+                message = f"```\n{chunk}\n```"
+                if len(output_chunks) > 1:
+                    message = f"Part {i+1}/{len(output_chunks)}:\n" + message
+                try:
+                    await event.respond(message)
+                except Exception as e:
+                    await event.respond(f"❌ Error sending chunk: {e}")
+
+            await event.respond(f"📜 Command finished with return code: {return_code}")
+
+        except Exception as e:
+            await event.respond(f"❌ Error executing command: {e}")
+            traceback.print_exc()
 
     @Auth.authorized_user
     async def check_disk_usage(self, event):
