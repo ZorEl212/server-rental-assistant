@@ -331,8 +331,8 @@ class SystemRoutes:
         output = await SystemUserManager.run_command(command)
         await event.respond(f"```\n{output}\n```")
 
-    @classmethod
-    async def check_disk_usage(cls, event):
+    @Auth.authorized_user
+    async def check_disk_usage(self, event):
         """
         Check the disk usage of the system and include warnings for high usage.
 
