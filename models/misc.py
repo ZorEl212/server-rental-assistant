@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import random
 import string
+import sys
 import time
 from functools import wraps
 
@@ -59,6 +60,38 @@ class Utilities:
     A collection of utility methods for common tasks like generating passwords,
     parsing durations, and formatting dates.
     """
+
+    LOG_COLORS = {
+        "DEBUG": "\033[94m",  # Blue
+        "INFO": "\033[92m",  # Green
+        "WARNING": "\033[93m",  # Yellow
+        "ERROR": "\033[91m",  # Red
+        "RESET": "\033[0m",
+    }
+
+    @classmethod
+    def print_log(cls, message, level="INFO"):
+        """
+        Prints a log message to stdout with timestamp and log level.
+
+        :param message: The log message.
+        :param level: Log level (DEBUG, INFO, WARNING, ERROR). Default is INFO.
+        """
+        timestamp = datetime.datetime.now(datetime.timezone.utc).strftime(
+            "%Y-%m-%d %H:%M:%S.%f"
+        )[:-3]
+        level = level.upper()
+
+        if level not in cls.LOG_COLORS:
+            level = "INFO"
+
+        formatted_message = f"{timestamp} [{level}] {message}"
+
+        # Print with color if running in a terminal
+        if sys.stdout.isatty():
+            print(cls.LOG_COLORS[level] + formatted_message + cls.LOG_COLORS["RESET"])
+        else:
+            print(formatted_message)
 
     @staticmethod
     def get_day_suffix(day):
@@ -201,6 +234,7 @@ class Utilities:
             rental.user.linux_password = password
             storage.save()
 
+    @staticmethod
     def check_redis():
         try:
             sh.redis_cli.ping()

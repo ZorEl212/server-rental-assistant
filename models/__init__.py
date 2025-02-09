@@ -60,6 +60,7 @@ import logging
 from telethon import TelegramClient
 from resources.constants import API_HASH, API_ID
 
+
 client = TelegramClient("server_plan_bot", API_ID, API_HASH)
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -75,6 +76,9 @@ from models.engine.db_engine import DBStorage
 storage = DBStorage()
 storage.reload()
 
+from models.misc import Utilities
+
+print_log = Utilities.print_log
 
 # Importing command handlers
 from models.commands.main_bot import BotManager
